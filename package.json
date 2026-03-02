@@ -1,0 +1,57 @@
+{
+  "name": "rest-client",
+  "version": "1.0.0",
+  "description": "A simple REST client desktop application",
+  "main": "main.js",
+  "bin": {
+    "restclient": "./bin/restclient.js"
+  },
+  "scripts": {
+    "start": "electron .",
+    "server": "node server.js",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "dist": "electron-builder --publish never"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.restclient.app",
+    "productName": "REST Client",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "server.js",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/logo.png",
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/logo.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "REST Client"
+    }
+  }
+}

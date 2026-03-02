@@ -1,0 +1,3904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REST Client</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.0/jsoneditor.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.0/jsoneditor.min.js"></script>
+    <style>
+        :root {
+            --text: #505050;
+            --accent: #fd6c1d;
+            --accent-dark: #e65a0d;
+            --accent-light: #ff8c42;
+            --muted: #8a8a8a;
+            --bg: #ffffff;
+            --bg-light: #f9f9f9;
+            --bg-dark: #2d2d2d;
+            --border: #e0e0e0;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        /* JSONEditor customizations */
+        .jsoneditor {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .jsoneditor-menu {
+            background-color: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+        }
+        .jsoneditor-menu > button,
+        .jsoneditor-menu > .jsoneditor-modes > button {
+            color: var(--text);
+        }
+        .jsoneditor-modes {
+            display: inline-block;
+        }
+        .jsoneditor-modes > button {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: var(--text);
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .jsoneditor-modes > button:hover {
+            background: var(--bg);
+        }
+        .jsoneditor-search input {
+            border-radius: 4px;
+        }
+        .jsoneditor-frame,
+        .jsoneditor-text-mode {
+            background: var(--bg);
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 100%);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 340px;
+            background: var(--bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header .logo {
+            height: 32px;
+            width: auto;
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--bg-dark);
+        }
+
+        .sidebar-header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 6px;
+        }
+
+        .sidebar-header-actions .header-icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .sidebar-header-actions .header-icon-btn:hover {
+            background: var(--bg-light);
+            color: var(--accent);
+        }
+
+        /* Sidebar Tabs */
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-light);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s, background 0.2s;
+            position: relative;
+        }
+
+        .sidebar-tab:hover {
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .sidebar-tab.active {
+            color: var(--accent);
+            background: var(--bg);
+        }
+
+        .sidebar-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .sidebar-tab-content {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar-tab-content.active {
+            display: flex;
+        }
+
+        /* Saved Configs Section */
+        .saved-configs-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-light);
+        }
+
+        .config-form-section {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .config-form-section .form-group {
+            margin-bottom: 16px;
+        }
+
+        .config-form-section .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .config-form-section .form-group input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .config-form-section .server-select {
+            margin-bottom: 0;
+        }
+
+        .icon-btn.delete-btn:hover {
+            background: var(--error);
+            border-color: var(--error);
+            color: white;
+        }
+
+        /* Config Footer */
+        .config-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-light);
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .config-footer.hidden {
+            display: none;
+        }
+
+        .config-footer .save-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .config-footer .save-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .config-footer .cancel-btn {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .config-footer .cancel-btn:hover {
+            background: var(--bg-light);
+        }
+
+        .unsaved-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--warning);
+            border-radius: 50%;
+            margin-left: 6px;
+        }
+
+        /* History Tab */
+        .history-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .history-item:hover {
+            background: var(--bg-light);
+        }
+
+        .history-item-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .history-item-url {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-item-time {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .history-item .method-badge {
+            font-size: 9px;
+            padding: 2px 5px;
+            min-width: 42px;
+        }
+
+        .saved-configs-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .saved-configs-select {
+            flex: 1;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .saved-configs-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .icon-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .icon-btn.save-btn {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .icon-btn.save-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .openapi-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .openapi-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .openapi-input {
+            flex: 1;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .openapi-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(253, 108, 29, 0.15);
+        }
+
+        .load-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .load-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .load-btn:disabled {
+            background: var(--muted);
+            cursor: not-allowed;
+        }
+
+        .refresh-btn {
+            background: var(--bg-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--border);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .refresh-btn.spinning i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Server Section */
+        .server-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-light);
+        }
+
+        .server-select {
+            width: 100%;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .server-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(253, 108, 29, 0.15);
+        }
+
+        .custom-server-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .custom-server-input {
+            flex: 1;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .custom-server-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(253, 108, 29, 0.15);
+        }
+
+        .add-server-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .add-server-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .endpoints-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .endpoints-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .endpoints-empty i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+            opacity: 0.5;
+        }
+
+        .endpoint-group {
+            margin-bottom: 8px;
+        }
+
+        .endpoint-group-header {
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            background: var(--bg-light);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .endpoints-filter {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-light);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .endpoints-filter-input {
+            width: 100%;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 8px 12px 8px 32px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .endpoints-filter-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .endpoints-filter-input::placeholder {
+            color: var(--muted);
+        }
+
+        .endpoints-filter-wrapper {
+            position: relative;
+        }
+
+        .endpoints-filter-wrapper i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .endpoints-filter-clear {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px;
+            display: none;
+        }
+
+        .endpoints-filter-clear:hover {
+            color: var(--text);
+        }
+
+        .endpoints-filter-wrapper.has-value .endpoints-filter-clear {
+            display: block;
+        }
+
+        .endpoint-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid transparent;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .endpoint-item:hover {
+            background: var(--bg-light);
+        }
+
+        .endpoint-item.active {
+            background: rgba(253, 108, 29, 0.08);
+            border-left-color: var(--accent);
+        }
+
+        .method-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            min-width: 52px;
+            text-align: center;
+        }
+
+        .method-badge.get { background: #d1fae5; color: #065f46; }
+        .method-badge.post { background: #dbeafe; color: #1e40af; }
+        .method-badge.put { background: #fef3c7; color: #92400e; }
+        .method-badge.delete { background: #fee2e2; color: #991b1b; }
+        .method-badge.patch { background: #ede9fe; color: #5b21b6; }
+
+        .endpoint-path {
+            font-size: 13px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .endpoint-summary {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* Main Content - Fixed Layout */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .request-section {
+            background: var(--bg);
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .url-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        select, input, textarea {
+            font-family: inherit;
+            font-size: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(253, 108, 29, 0.15);
+        }
+
+        .method-select {
+            width: 130px;
+            cursor: pointer;
+            font-weight: 500;
+            background: var(--bg-light);
+        }
+
+        .url-input {
+            flex: 1;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(253, 108, 29, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(253, 108, 29, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: var(--muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .collapsible-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .headers-section {
+            flex: 1;
+        }
+
+        .body-section {
+            flex: 1;
+        }
+
+        .header-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .header-row input {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .remove-btn, .add-btn {
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .remove-btn {
+            background: var(--error);
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+        }
+
+        .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        .add-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .body-section textarea {
+            width: 100%;
+            min-height: 80px;
+            resize: vertical;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            padding: 10px;
+        }
+
+        /* Response Section - Takes remaining space */
+        .response-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-light);
+            overflow: hidden;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        #statusInfo {
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #statusInfo:not(.hidden) {
+            display: flex;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .status-2xx { background: #d1fae5; color: #065f46; }
+        .status-3xx { background: #fef3c7; color: #92400e; }
+        .status-4xx { background: #fee2e2; color: #991b1b; }
+        .status-5xx { background: #ede9fe; color: #5b21b6; }
+
+        .timing {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            padding: 0 20px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s, background 0.2s;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.active {
+            color: var(--accent);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .tab-content {
+            flex: 1;
+            padding: 16px 20px;
+            overflow: auto;
+        }
+
+        .response-body-textarea {
+            width: 100%;
+            height: 100%;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            border: none;
+            background: var(--bg-light);
+            color: var(--text);
+            resize: none;
+            padding: 0;
+        }
+
+        .response-body-textarea:focus {
+            outline: none;
+        }
+
+        .copy-btn {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 12px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .response-headers {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .response-headers div {
+            margin-bottom: 4px;
+        }
+
+        .header-name {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Endpoint Details Tab */
+        .endpoint-details {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .endpoint-details-header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .endpoint-details-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--bg-dark);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .endpoint-details-path {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .endpoint-details-description {
+            color: var(--text);
+            margin-top: 8px;
+        }
+
+        .endpoint-details-section {
+            margin-bottom: 20px;
+        }
+
+        .endpoint-details-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .param-table th {
+            text-align: left;
+            padding: 8px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .param-table td {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .param-name {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .param-required {
+            color: var(--error);
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        .param-type {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .param-in {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-light);
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .schema-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .response-code {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+
+        .response-code.success { background: #d1fae5; color: #065f46; }
+        .response-code.redirect { background: #fef3c7; color: #92400e; }
+        .response-code.client-error { background: #fee2e2; color: #991b1b; }
+        .response-code.server-error { background: #ede9fe; color: #5b21b6; }
+
+        .response-item {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .response-item-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .response-item-desc {
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .no-endpoint-selected {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .no-endpoint-selected i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+            opacity: 0.5;
+        }
+
+        /* Debug Tab */
+        .debug-section {
+            margin-bottom: 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .debug-section-header {
+            background: var(--bg-light);
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .debug-section-content {
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .debug-error {
+            color: var(--error);
+            background: #fee2e2;
+        }
+
+        .debug-label {
+            color: var(--muted);
+            margin-right: 8px;
+        }
+
+        .debug-value {
+            color: var(--text);
+        }
+
+        .debug-row {
+            margin-bottom: 4px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .error {
+            color: var(--error);
+            padding: 20px;
+            text-align: center;
+            background: #fee2e2;
+            border-radius: 8px;
+        }
+
+        .api-info {
+            padding: 12px 16px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--bg-dark);
+            margin-bottom: 2px;
+        }
+
+        .api-version {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg);
+            border-radius: 12px;
+            width: 500px;
+            max-width: 90vw;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--bg-dark);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .modal-btn:hover {
+            background: var(--bg-light);
+        }
+
+        .modal-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: var(--accent-dark);
+        }
+
+        .modal-btn.danger {
+            background: var(--error);
+            border-color: var(--error);
+            color: white;
+        }
+
+        .modal-btn.danger:hover {
+            background: #dc2626;
+        }
+
+        /* Export Modal Styles */
+        .export-section {
+            margin-bottom: 20px;
+        }
+
+        .export-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-section-title i {
+            color: var(--accent);
+        }
+
+        .export-checkbox-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-light);
+        }
+
+        .export-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .export-checkbox-item:last-child {
+            border-bottom: none;
+        }
+
+        .export-checkbox-item:hover {
+            background: var(--bg);
+        }
+
+        .export-checkbox-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
+
+        .export-checkbox-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .export-checkbox-item .item-meta {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .export-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .export-option input[type="checkbox"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
+
+        .export-option label {
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .export-select-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .export-select-actions button {
+            font-size: 12px;
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .export-select-actions button:hover {
+            text-decoration: underline;
+        }
+
+        .export-empty {
+            padding: 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .config-item {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .config-item:hover {
+            background: var(--bg-light);
+        }
+
+        .config-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .config-item-name {
+            font-weight: 600;
+            color: var(--bg-dark);
+            margin-bottom: 2px;
+        }
+
+        .config-item-url {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .config-item-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .config-item-actions button {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+
+        .no-configs {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+        }
+
+        .variable-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .variable-row input {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .variable-row .remove-var-btn {
+            background: var(--error);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .variable-row .remove-var-btn:hover {
+            background: #dc2626;
+        }
+
+        .custom-server-item {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+            align-items: center;
+            padding: 6px 8px;
+            background: var(--bg-light);
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .custom-server-item .server-url {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text);
+        }
+
+        .custom-server-item .server-url-input {
+            flex: 1;
+            padding: 4px 8px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .custom-server-item button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .custom-server-item button:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .custom-server-item .delete-btn:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        ::selection {
+            background: rgba(253, 108, 29, 0.2);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="/logo.png" alt="Airbrx" class="logo">
+                <h1>REST Client</h1>
+                <div class="sidebar-header-actions">
+                    <button class="header-icon-btn" id="importBtn" title="Import data">
+                        <i class="fas fa-file-import"></i>
+                    </button>
+                    <button class="header-icon-btn" id="exportBtn" title="Export data">
+                        <i class="fas fa-file-export"></i>
+                    </button>
+                </div>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;">
+            </div>
+
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-sidebar-tab="config">
+                    <i class="fas fa-cog"></i> Config
+                </button>
+                <button class="sidebar-tab" data-sidebar-tab="endpoints">
+                    <i class="fas fa-list"></i> Endpoints
+                </button>
+                <button class="sidebar-tab" data-sidebar-tab="history">
+                    <i class="fas fa-history"></i> History
+                </button>
+            </div>
+
+            <!-- Config Tab Content -->
+            <div class="sidebar-tab-content active" id="configTabContent">
+                <div class="saved-configs-section">
+                    <div class="section-title">Saved Configs <span id="unsavedIndicator" class="unsaved-indicator" style="display: none;" title="Unsaved changes"></span></div>
+                    <div class="saved-configs-row">
+                        <select class="saved-configs-select" id="savedConfigsSelect">
+                            <option value="">New config...</option>
+                        </select>
+                        <button class="icon-btn" id="newConfigBtn" title="New config">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="icon-btn" id="deleteConfigBtn" title="Delete config" style="display: none;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="config-form-section">
+                    <div class="form-group">
+                        <label for="configNameInput">Config Name</label>
+                        <input type="text" id="configNameInput" placeholder="e.g., Production API, Local Dev">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openapiUrl">OpenAPI Spec URL</label>
+                        <div class="openapi-input-group">
+                            <input type="text" class="openapi-input" id="openapiUrl" placeholder="https://api.example.com/openapi.json">
+                            <button class="load-btn" id="loadSpecBtn">Load</button>
+                            <button class="refresh-btn" id="refreshSpecBtn" title="Refresh spec from server" style="display: none;">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="serverSection" class="form-group hidden">
+                        <label>Server</label>
+                        <select class="server-select" id="serverSelect"></select>
+                        <div class="custom-server-group" style="margin-top: 8px;">
+                            <input type="text" class="custom-server-input" id="customServerInput" placeholder="Add custom server URL...">
+                            <button class="add-server-btn" id="addServerBtn">+ Add</button>
+                        </div>
+                        <div id="customServersContainer" style="margin-top: 8px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Default Headers</label>
+                        <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">Headers to include with every request (e.g., Authorization)</p>
+                        <div id="configHeadersContainer"></div>
+                        <button class="modal-btn" onclick="addConfigHeaderRow()" style="margin-top: 8px; padding: 6px 12px; font-size: 12px;">+ Add Header</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Path Variables</label>
+                        <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">Define variables like <code>userId</code> to replace <code>{userId}</code> in paths</p>
+                        <div id="configVariablesContainer"></div>
+                        <button class="modal-btn" onclick="addConfigVariableRow()" style="margin-top: 8px; padding: 6px 12px; font-size: 12px;">+ Add Variable</button>
+                    </div>
+
+                    <div id="variablesToggleSection" class="hidden" style="margin-top: 12px;">
+                        <div class="toggle-row">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="replaceVariablesToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">Replace path variables with session values</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-footer hidden" id="configFooter">
+                    <button class="cancel-btn" id="cancelConfigBtn">Cancel</button>
+                    <button class="save-btn" id="saveConfigBtn">Save Config</button>
+                </div>
+            </div>
+
+            <!-- Endpoints Tab Content -->
+            <div class="sidebar-tab-content" id="endpointsTabContent">
+                <div class="endpoints-filter" id="endpointsFilterSection" style="display: none;">
+                    <div class="endpoints-filter-wrapper" id="endpointsFilterWrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="endpoints-filter-input" id="endpointsFilter" placeholder="Filter endpoints...">
+                        <button class="endpoints-filter-clear" id="endpointsFilterClear" title="Clear filter">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="apiInfoEndpoints" class="api-info hidden">
+                    <div class="api-title" id="apiTitleEndpoints"></div>
+                    <div class="api-version" id="apiVersionEndpoints"></div>
+                </div>
+
+                <div class="endpoints-container" id="endpointsContainer">
+                    <div class="endpoints-empty">
+                        <i class="fas fa-plug"></i>
+                        Load an OpenAPI spec in the Config tab first
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab Content -->
+            <div class="sidebar-tab-content" id="historyTabContent">
+                <div class="history-header">
+                    <span class="section-title" style="margin: 0;">Request History</span>
+                    <button class="icon-btn" id="clearHistoryBtn" title="Clear history">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="history-container" id="historyContainer">
+                    <div class="endpoints-empty">
+                        <i class="fas fa-history"></i>
+                        No requests yet
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="request-section">
+                <div class="url-bar">
+                    <select class="method-select" id="method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="PATCH">PATCH</option>
+                    </select>
+                    <input type="text" class="url-input" id="url" placeholder="Enter URL...">
+                    <button class="send-btn" id="sendBtn">Send</button>
+                </div>
+
+                <div class="collapsible-sections">
+                    <div class="headers-section">
+                        <div class="section-title">Headers</div>
+                        <div id="headersContainer">
+                            <div class="header-row">
+                                <input type="text" placeholder="Header name" class="header-key">
+                                <input type="text" placeholder="Header value" class="header-value">
+                                <button class="remove-btn" onclick="removeHeader(this)">X</button>
+                            </div>
+                        </div>
+                        <button class="add-btn" onclick="addHeader()">+ Add Header</button>
+                    </div>
+
+                    <div class="body-section" id="bodySection">
+                        <div class="section-title">Body</div>
+                        <div id="requestBodyEditor" style="height: 300px; border: 1px solid var(--border); border-radius: 6px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="response-section">
+                <div class="response-header">
+                    <div class="section-title" style="margin-bottom: 0;">Response</div>
+                    <div id="statusInfo" class="hidden">
+                        <span id="statusBadge" class="status-badge"></span>
+                        <span id="timing" class="timing"></span>
+                        <button class="copy-btn" id="copyResponseBtn" title="Copy full response">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="body">Body</button>
+                    <button class="tab" data-tab="headers">Headers</button>
+                    <button class="tab" data-tab="endpoint">Endpoint</button>
+                    <button class="tab" data-tab="debug">Debug</button>
+                </div>
+
+                <div class="tab-content">
+                    <div id="bodyTab" style="height: 400px;"></div>
+                    <div id="headersTab" class="response-headers hidden"></div>
+                    <div id="debugTab" class="hidden">
+                        <div class="no-endpoint-selected">
+                            <i class="fas fa-bug"></i>
+                            Send a request to see debug information
+                        </div>
+                    </div>
+                    <div id="endpointTab" class="endpoint-details hidden">
+                        <div class="no-endpoint-selected">
+                            <i class="fas fa-info-circle"></i>
+                            Select an endpoint from the sidebar to view its details
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Redirect Confirmation Modal -->
+    <div class="modal-overlay" id="redirectModal" style="display: none;">
+        <div class="modal" style="width: 550px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-external-link-alt" style="color: var(--warning); margin-right: 8px;"></i>Redirect Detected</h2>
+                <button class="modal-close" onclick="closeRedirectModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px;">The server returned a <strong id="redirectStatusCode">302</strong> redirect response.</p>
+                <div class="form-group">
+                    <label>Redirect URL</label>
+                    <input type="text" id="redirectUrl" readonly style="background: var(--bg-light); font-family: monospace; font-size: 12px;">
+                </div>
+                <div id="redirectWarning" class="hidden" style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 12px; margin-top: 12px;">
+                    <i class="fas fa-exclamation-triangle" style="color: #92400e;"></i>
+                    <span style="color: #92400e; font-size: 13px;" id="redirectWarningText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeRedirectModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="followRedirect()">
+                    <i class="fas fa-arrow-right"></i> Follow Redirect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay" id="exportModal" style="display: none;">
+        <div class="modal" style="width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-export" style="color: var(--accent); margin-right: 8px;"></i>Export Data</h2>
+                <button class="modal-close" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-section">
+                    <div class="export-section-title">
+                        <i class="fas fa-cog"></i> Endpoints (Configs)
+                    </div>
+                    <div class="export-select-actions">
+                        <button onclick="selectAllEndpoints()">Select All</button>
+                        <button onclick="selectNoEndpoints()">Select None</button>
+                    </div>
+                    <div class="export-checkbox-list" id="exportEndpointsList">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <div class="export-section-title">
+                        <i class="fas fa-sliders-h"></i> Options
+                    </div>
+                    <div class="export-option">
+                        <input type="checkbox" id="exportIncludeVariables" checked>
+                        <label for="exportIncludeVariables">Include variables (for selected endpoints)</label>
+                    </div>
+                    <div class="export-option">
+                        <input type="checkbox" id="exportIncludeHistory">
+                        <label for="exportIncludeHistory">Include history (for selected endpoints)</label>
+                    </div>
+                    <div class="export-option">
+                        <input type="checkbox" id="exportAllHistory">
+                        <label for="exportAllHistory">Include ALL history (regardless of endpoint selection)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeExportModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="executeExport()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const methodSelect = document.getElementById('method');
+        const urlInput = document.getElementById('url');
+        const sendBtn = document.getElementById('sendBtn');
+        const bodySection = document.getElementById('bodySection');
+        const requestBodyContainer = document.getElementById('requestBodyEditor');
+        const headersContainer = document.getElementById('headersContainer');
+        const statusInfo = document.getElementById('statusInfo');
+        const statusBadge = document.getElementById('statusBadge');
+        const timing = document.getElementById('timing');
+        const bodyTabContainer = document.getElementById('bodyTab');
+
+        // Initialize JSONEditor for request body (edit mode)
+        let requestBodySaveTimeout;
+        const requestBodyEditor = new JSONEditor(requestBodyContainer, {
+            mode: 'code',
+            modes: ['code', 'tree'],
+            mainMenuBar: true,
+            statusBar: false,
+            search: true,
+            onChange: function() {
+                markUnsaved();
+                // Debounced auto-save
+                clearTimeout(requestBodySaveTimeout);
+                requestBodySaveTimeout = setTimeout(() => {
+                    if (typeof saveState === 'function') saveState();
+                }, 500);
+            }
+        });
+
+        // Initialize JSONEditor for response body (view mode)
+        const responseBodyEditor = new JSONEditor(bodyTabContainer, {
+            mode: 'tree',
+            modes: ['tree', 'code', 'text'],
+            mainMenuBar: true,
+            statusBar: false,
+            search: true
+        });
+        const headersTab = document.getElementById('headersTab');
+        const tabs = document.querySelectorAll('.tab');
+        const openapiUrl = document.getElementById('openapiUrl');
+        const loadSpecBtn = document.getElementById('loadSpecBtn');
+        const refreshSpecBtn = document.getElementById('refreshSpecBtn');
+        const endpointsContainer = document.getElementById('endpointsContainer');
+        const endpointsFilter = document.getElementById('endpointsFilter');
+        const endpointsFilterSection = document.getElementById('endpointsFilterSection');
+        const endpointsFilterWrapper = document.getElementById('endpointsFilterWrapper');
+        const endpointsFilterClear = document.getElementById('endpointsFilterClear');
+        const serverSection = document.getElementById('serverSection');
+        const serverSelect = document.getElementById('serverSelect');
+        const customServerInput = document.getElementById('customServerInput');
+        const addServerBtn = document.getElementById('addServerBtn');
+        const customServersContainer = document.getElementById('customServersContainer');
+        const savedConfigsSelect = document.getElementById('savedConfigsSelect');
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        const newConfigBtn = document.getElementById('newConfigBtn');
+        const deleteConfigBtn = document.getElementById('deleteConfigBtn');
+        const cancelConfigBtn = document.getElementById('cancelConfigBtn');
+        const configNameInput = document.getElementById('configNameInput');
+        const configHeadersContainer = document.getElementById('configHeadersContainer');
+        const configVariablesContainer = document.getElementById('configVariablesContainer');
+        const configFooter = document.getElementById('configFooter');
+        const unsavedIndicator = document.getElementById('unsavedIndicator');
+
+        let currentSpec = null;
+        let servers = [];
+        let customServers = [];
+        let currentVariables = [];
+        let cleanConfigState = null; // Stores the "clean" state for revert
+
+        const STORAGE_KEY = 'restclient_configs';
+        const STATE_KEY = 'restclient_state';
+        const HISTORY_KEY = 'restclient_history';
+        const MAX_HISTORY = 100;
+
+        function updateVariablesToggleVisibility() {
+            const toggleSection = document.getElementById('variablesToggleSection');
+            if (currentVariables && currentVariables.length > 0) {
+                toggleSection.classList.remove('hidden');
+            } else {
+                toggleSection.classList.add('hidden');
+            }
+        }
+
+        // Config dirty state tracking
+        function getConfigFormState() {
+            return {
+                configId: savedConfigsSelect.value,
+                name: configNameInput.value,
+                openapiUrl: openapiUrl.value,
+                selectedServer: serverSelect.value,
+                headers: getConfigHeadersFromForm(),
+                variables: getConfigVariablesFromForm(),
+                customServers: [...customServers]
+            };
+        }
+
+        function setCleanConfigState() {
+            cleanConfigState = getConfigFormState();
+            updateDirtyState();
+        }
+
+        function isConfigDirty() {
+            if (!cleanConfigState) return false;
+            const current = getConfigFormState();
+            return JSON.stringify(current) !== JSON.stringify(cleanConfigState);
+        }
+
+        function updateDirtyState() {
+            const dirty = isConfigDirty();
+            configFooter.classList.toggle('hidden', !dirty);
+            unsavedIndicator.style.display = dirty ? '' : 'none';
+        }
+
+        function setupConfigDirtyTracking() {
+            const checkDirty = () => updateDirtyState();
+            configNameInput.addEventListener('input', checkDirty);
+            openapiUrl.addEventListener('input', checkDirty);
+            serverSelect.addEventListener('change', checkDirty);
+            configHeadersContainer.addEventListener('input', checkDirty);
+            configVariablesContainer.addEventListener('input', checkDirty);
+            // Also check when headers/variables are added/removed
+            const observer = new MutationObserver(checkDirty);
+            observer.observe(configHeadersContainer, { childList: true });
+            observer.observe(configVariablesContainer, { childList: true });
+        }
+
+        // State persistence functions
+        function saveState() {
+            const activeSidebarTab = document.querySelector('.sidebar-tab.active')?.dataset.sidebarTab || 'config';
+            const state = {
+                selectedConfigId: savedConfigsSelect.value,
+                openapiUrl: openapiUrl.value,
+                selectedServer: serverSelect.value,
+                method: methodSelect.value,
+                url: urlInput.value,
+                headers: getHeadersArray(),
+                requestBody: requestBodyEditor.getText(),
+                sidebarTab: activeSidebarTab,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(STATE_KEY, JSON.stringify(state));
+        }
+
+        function getHeadersArray() {
+            const headers = [];
+            const rows = headersContainer.querySelectorAll('.header-row');
+            rows.forEach(row => {
+                const key = row.querySelector('.header-key').value;
+                const value = row.querySelector('.header-value').value;
+                headers.push({ key, value });
+            });
+            return headers;
+        }
+
+        function restoreState() {
+            const data = localStorage.getItem(STATE_KEY);
+            if (!data) return;
+
+            try {
+                const state = JSON.parse(data);
+
+                // Restore OpenAPI URL
+                if (state.openapiUrl) {
+                    openapiUrl.value = state.openapiUrl;
+                }
+
+                // Restore request details
+                if (state.method) {
+                    methodSelect.value = state.method;
+                    updateBodyVisibility();
+                }
+                if (state.url) {
+                    urlInput.value = state.url;
+                }
+                if (state.requestBody) {
+                    try {
+                        requestBodyEditor.set(JSON.parse(state.requestBody));
+                    } catch (e) {
+                        requestBodyEditor.setText(state.requestBody);
+                    }
+                }
+
+                // Restore headers
+                if (state.headers && state.headers.length > 0) {
+                    headersContainer.innerHTML = '';
+                    state.headers.forEach(h => {
+                        addHeaderWithValues(h.key || '', h.value || '');
+                    });
+                }
+
+                // Load config and spec if we had one selected
+                if (state.selectedConfigId) {
+                    const configs = getSavedConfigs();
+                    const config = configs.find(c => c.id === state.selectedConfigId);
+                    if (config) {
+                        savedConfigsSelect.value = state.selectedConfigId;
+
+                        // Populate the config form
+                        configNameInput.value = config.name || '';
+                        customServers = config.customServers || [];
+                        currentVariables = config.variables || [];
+                        populateConfigHeaders(config.headers || []);
+                        populateConfigVariables(currentVariables);
+                        renderCustomServers();
+                        updateVariablesToggleVisibility();
+                        deleteConfigBtn.style.display = '';
+
+                        // Load the OpenAPI spec
+                        if (state.openapiUrl) {
+                            loadOpenApiSpec().then(() => {
+                                if (state.selectedServer) {
+                                    serverSelect.value = state.selectedServer;
+                                }
+                                setCleanConfigState();
+                                // Restore sidebar tab after spec is loaded
+                                if (state.sidebarTab) {
+                                    restoreSidebarTab(state.sidebarTab);
+                                }
+                            });
+                        } else {
+                            setCleanConfigState();
+                            if (state.sidebarTab) {
+                                restoreSidebarTab(state.sidebarTab);
+                            }
+                        }
+                    }
+                } else if (state.openapiUrl) {
+                    // No config but had a spec URL loaded
+                    loadOpenApiSpec().then(() => {
+                        if (state.selectedServer) {
+                            serverSelect.value = state.selectedServer;
+                        }
+                        // Restore sidebar tab after spec is loaded
+                        if (state.sidebarTab) {
+                            restoreSidebarTab(state.sidebarTab);
+                        }
+                    });
+                } else if (state.sidebarTab) {
+                    // No spec to load, just restore the tab
+                    restoreSidebarTab(state.sidebarTab);
+                }
+            } catch (e) {
+                console.error('Failed to restore state:', e);
+            }
+        }
+
+        // Auto-save state on changes
+        function setupAutoSave() {
+            // Debounce save to avoid excessive writes
+            let saveTimeout;
+            const debouncedSave = () => {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveState, 500);
+            };
+
+            methodSelect.addEventListener('change', debouncedSave);
+            urlInput.addEventListener('input', debouncedSave);
+            // Note: requestBodyEditor has onChange callback that handles save
+            serverSelect.addEventListener('change', debouncedSave);
+            savedConfigsSelect.addEventListener('change', debouncedSave);
+            openapiUrl.addEventListener('input', debouncedSave);
+
+            // Save headers on change (using event delegation)
+            headersContainer.addEventListener('input', debouncedSave);
+
+            // Save sidebar tab changes
+            sidebarTabs.forEach(tab => tab.addEventListener('click', debouncedSave));
+        }
+
+        // Initialize (part 1 - basic setup)
+        methodSelect.addEventListener('change', updateBodyVisibility);
+        updateBodyVisibility();
+        loadSavedConfigsDropdown();
+
+        function updateBodyVisibility() {
+            const method = methodSelect.value;
+            const showBody = ['POST', 'PUT', 'PATCH'].includes(method);
+            bodySection.style.display = showBody ? 'block' : 'none';
+        }
+
+        // LocalStorage functions
+        function getSavedConfigs() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveConfigs(configs) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
+        }
+
+        // History functions
+        function getHistory() {
+            const data = localStorage.getItem(HISTORY_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveHistory(history) {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        }
+
+        // Export/Import functions
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importFileInput = document.getElementById('importFileInput');
+        const exportModal = document.getElementById('exportModal');
+        const exportEndpointsList = document.getElementById('exportEndpointsList');
+        const exportIncludeVariables = document.getElementById('exportIncludeVariables');
+        const exportIncludeHistory = document.getElementById('exportIncludeHistory');
+        const exportAllHistory = document.getElementById('exportAllHistory');
+
+        function openExportModal() {
+            const configs = getSavedConfigs();
+            const history = getHistory();
+
+            if (configs.length === 0) {
+                exportEndpointsList.innerHTML = '<div class="export-empty">No saved endpoints</div>';
+            } else {
+                exportEndpointsList.innerHTML = configs.map(config => {
+                    const historyCount = history.filter(h => h.configId === config.id).length;
+                    const varCount = (config.variables || []).length;
+                    return `
+                        <div class="export-checkbox-item">
+                            <input type="checkbox" id="export-${config.id}" data-config-id="${config.id}" checked>
+                            <label for="export-${config.id}">
+                                ${escapeHtml(config.name)}
+                                <div class="item-meta">${varCount} variables, ${historyCount} history items</div>
+                            </label>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            exportModal.style.display = 'flex';
+        }
+
+        function closeExportModal() {
+            exportModal.style.display = 'none';
+        }
+
+        function selectAllEndpoints() {
+            exportEndpointsList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        }
+
+        function selectNoEndpoints() {
+            exportEndpointsList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        function executeExport() {
+            const selectedConfigIds = Array.from(exportEndpointsList.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => cb.dataset.configId);
+
+            const allConfigs = getSavedConfigs();
+            const allHistory = getHistory();
+
+            // Filter configs
+            let exportConfigs = allConfigs.filter(c => selectedConfigIds.includes(c.id));
+
+            // Optionally strip variables
+            if (!exportIncludeVariables.checked) {
+                exportConfigs = exportConfigs.map(c => {
+                    const { variables, ...rest } = c;
+                    return rest;
+                });
+            }
+
+            // Filter history
+            let exportHistory = [];
+            if (exportAllHistory.checked) {
+                exportHistory = allHistory;
+            } else if (exportIncludeHistory.checked) {
+                exportHistory = allHistory.filter(h => selectedConfigIds.includes(h.configId));
+            }
+
+            const data = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                configs: exportConfigs,
+                history: exportHistory
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `restclient-export-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            closeExportModal();
+        }
+
+        function importData(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (!data.version) {
+                        alert('Invalid export file format');
+                        return;
+                    }
+
+                    const confirmMsg = `Import will add/merge:\n` +
+                        `- ${(data.configs || []).length} endpoint configs\n` +
+                        `- ${(data.history || []).length} history items\n\n` +
+                        `Existing configs with same names will be updated. Continue?`;
+
+                    if (!confirm(confirmMsg)) return;
+
+                    // Merge configs (update existing by name, add new)
+                    if (data.configs && data.configs.length > 0) {
+                        const existingConfigs = getSavedConfigs();
+                        data.configs.forEach(importConfig => {
+                            const existingIdx = existingConfigs.findIndex(c => c.name === importConfig.name);
+                            if (existingIdx >= 0) {
+                                // Update existing, keep the old ID
+                                existingConfigs[existingIdx] = { ...importConfig, id: existingConfigs[existingIdx].id };
+                            } else {
+                                // Add new
+                                existingConfigs.push(importConfig);
+                            }
+                        });
+                        saveConfigs(existingConfigs);
+                    }
+
+                    // Merge history (add new items, avoid duplicates by timestamp+url)
+                    if (data.history && data.history.length > 0) {
+                        const existingHistory = getHistory();
+                        const existingKeys = new Set(existingHistory.map(h => `${h.timestamp}-${h.url}`));
+                        data.history.forEach(importItem => {
+                            const key = `${importItem.timestamp}-${importItem.url}`;
+                            if (!existingKeys.has(key)) {
+                                existingHistory.push(importItem);
+                            }
+                        });
+                        // Sort by timestamp descending and trim to MAX_HISTORY
+                        existingHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        if (existingHistory.length > MAX_HISTORY) {
+                            existingHistory.length = MAX_HISTORY;
+                        }
+                        saveHistory(existingHistory);
+                    }
+
+                    // Refresh UI
+                    loadSavedConfigsDropdown();
+                    renderHistory();
+
+                    alert('Import successful!');
+                } catch (err) {
+                    alert('Failed to import: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Close export modal on overlay click
+        exportModal.addEventListener('click', (e) => {
+            if (e.target === exportModal) closeExportModal();
+        });
+
+        exportBtn.addEventListener('click', openExportModal);
+        importBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                importData(e.target.files[0]);
+                e.target.value = ''; // Reset for future imports
+            }
+        });
+
+        function addToHistory(request) {
+            const history = getHistory();
+            const currentConfigId = savedConfigsSelect.value || null;
+            history.unshift({
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+                configId: currentConfigId,
+                method: request.method,
+                url: request.url,
+                headers: request.headers,
+                body: request.body
+            });
+            // Keep only last MAX_HISTORY items
+            if (history.length > MAX_HISTORY) {
+                history.length = MAX_HISTORY;
+            }
+            saveHistory(history);
+            renderHistory();
+        }
+
+        function clearHistory() {
+            saveHistory([]);
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const history = getHistory();
+
+            if (history.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="endpoints-empty">
+                        <i class="fas fa-history"></i>
+                        No requests yet
+                    </div>
+                `;
+                return;
+            }
+
+            historyContainer.innerHTML = history.map(item => `
+                <div class="history-item" data-history-id="${item.id}">
+                    <div class="history-item-top">
+                        <span class="method-badge ${item.method.toLowerCase()}">${item.method}</span>
+                        <span class="history-item-time">${formatHistoryTime(item.timestamp)}</span>
+                    </div>
+                    <div class="history-item-url" title="${escapeHtml(item.url)}">${escapeHtml(item.url)}</div>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            historyContainer.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', () => loadFromHistory(item.dataset.historyId));
+            });
+        }
+
+        function formatHistoryTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+
+            // Less than 1 minute
+            if (diff < 60000) return 'Just now';
+            // Less than 1 hour
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            // Less than 24 hours
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            // Otherwise show date
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function loadFromHistory(historyId) {
+            const history = getHistory();
+            const item = history.find(h => h.id === historyId);
+            if (!item) return;
+
+            // Populate request form
+            methodSelect.value = item.method;
+            updateBodyVisibility();
+            urlInput.value = item.url;
+            try {
+                requestBodyEditor.set(JSON.parse(item.body || '{}'));
+            } catch (e) {
+                requestBodyEditor.setText(item.body || '');
+            }
+
+            // Populate headers
+            headersContainer.innerHTML = '';
+            if (item.headers && item.headers.length > 0) {
+                item.headers.forEach(h => {
+                    if (h.key) {
+                        addHeaderWithValues(h.key, h.value || '');
+                    }
+                });
+            }
+            if (headersContainer.children.length === 0) {
+                addHeader();
+            }
+        }
+
+        // Clear history button handler and render will be set up after historyContainer is defined
+
+        function loadSavedConfigsDropdown() {
+            const configs = getSavedConfigs();
+            savedConfigsSelect.innerHTML = '<option value="">Select a config...</option>' +
+                configs.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        }
+
+        // Config selection - populate form when a config is selected
+        savedConfigsSelect.addEventListener('change', () => {
+            const configId = savedConfigsSelect.value;
+            if (!configId) {
+                clearConfigForm();
+                deleteConfigBtn.style.display = 'none';
+                setCleanConfigState();
+                return;
+            }
+
+            const configs = getSavedConfigs();
+            const config = configs.find(c => c.id === configId);
+            if (!config) return;
+
+            // Populate the form
+            configNameInput.value = config.name || '';
+            openapiUrl.value = config.openapiUrl || '';
+            customServers = config.customServers || [];
+            currentVariables = config.variables || [];
+
+            // Populate headers and variables in form
+            populateConfigHeaders(config.headers || []);
+            populateConfigVariables(currentVariables);
+            renderCustomServers();
+            updateVariablesToggleVisibility();
+
+            // Show delete button
+            deleteConfigBtn.style.display = '';
+
+            // Load the spec if URL exists
+            if (config.openapiUrl) {
+                loadOpenApiSpec().then(() => {
+                    if (config.selectedServer) {
+                        serverSelect.value = config.selectedServer;
+                    }
+                    setCleanConfigState();
+                });
+            } else {
+                setCleanConfigState();
+            }
+        });
+
+        function clearConfigForm() {
+            configNameInput.value = '';
+            openapiUrl.value = '';
+            currentVariables = [];
+            customServers = [];
+            populateConfigHeaders([]);
+            populateConfigVariables([]);
+            renderCustomServers();
+            updateVariablesToggleVisibility();
+            serverSection.classList.add('hidden');
+            refreshSpecBtn.style.display = 'none';
+        }
+
+        // Save config button - saves current form to selected config or creates new
+        saveConfigBtn.addEventListener('click', () => {
+            const name = configNameInput.value.trim();
+            if (!name) {
+                alert('Please enter a config name');
+                configNameInput.focus();
+                return;
+            }
+
+            const headers = getConfigHeadersFromForm();
+            const variables = getConfigVariablesFromForm();
+            const selectedId = savedConfigsSelect.value;
+            const configs = getSavedConfigs();
+
+            if (selectedId) {
+                // Update existing config
+                const idx = configs.findIndex(c => c.id === selectedId);
+                if (idx !== -1) {
+                    configs[idx].name = name;
+                    configs[idx].openapiUrl = openapiUrl.value.trim();
+                    configs[idx].customServers = [...customServers];
+                    configs[idx].selectedServer = serverSelect.value || '';
+                    configs[idx].headers = headers;
+                    configs[idx].variables = variables;
+                    saveConfigs(configs);
+                    loadSavedConfigsDropdown();
+                    savedConfigsSelect.value = selectedId;
+                    currentVariables = variables;
+                    updateVariablesToggleVisibility();
+                    setCleanConfigState();
+                    return;
+                }
+            }
+
+            // Create new config
+            const newConfig = {
+                id: Date.now().toString(),
+                name,
+                openapiUrl: openapiUrl.value.trim(),
+                customServers: [...customServers],
+                selectedServer: serverSelect.value || '',
+                headers,
+                variables
+            };
+
+            configs.push(newConfig);
+            saveConfigs(configs);
+            loadSavedConfigsDropdown();
+            savedConfigsSelect.value = newConfig.id;
+            deleteConfigBtn.style.display = '';
+            currentVariables = variables;
+            updateVariablesToggleVisibility();
+            setCleanConfigState();
+        });
+
+        // Cancel config button - revert to clean state
+        cancelConfigBtn.addEventListener('click', () => {
+            if (!cleanConfigState) return;
+
+            // Revert form to clean state
+            savedConfigsSelect.value = cleanConfigState.configId;
+            configNameInput.value = cleanConfigState.name;
+            openapiUrl.value = cleanConfigState.openapiUrl;
+            customServers = [...cleanConfigState.customServers];
+
+            // Repopulate headers, variables, and custom servers
+            populateConfigHeaders(cleanConfigState.headers || []);
+            populateConfigVariables(cleanConfigState.variables || []);
+            renderCustomServers();
+            currentVariables = cleanConfigState.variables || [];
+            updateVariablesToggleVisibility();
+
+            // Restore server selection if spec is loaded
+            if (cleanConfigState.selectedServer && serverSelect.querySelector(`option[value="${cleanConfigState.selectedServer}"]`)) {
+                serverSelect.value = cleanConfigState.selectedServer;
+            }
+
+            // Update delete button visibility
+            deleteConfigBtn.style.display = cleanConfigState.configId ? '' : 'none';
+
+            updateDirtyState();
+        });
+
+        // New config button - clears form for new config
+        newConfigBtn.addEventListener('click', () => {
+            savedConfigsSelect.value = '';
+            clearConfigForm();
+            deleteConfigBtn.style.display = 'none';
+            setCleanConfigState();
+            configNameInput.focus();
+        });
+
+        // Delete config button
+        deleteConfigBtn.addEventListener('click', () => {
+            const selectedId = savedConfigsSelect.value;
+            if (!selectedId) return;
+
+            if (!confirm('Delete this configuration?')) return;
+
+            const configs = getSavedConfigs().filter(c => c.id !== selectedId);
+            saveConfigs(configs);
+            loadSavedConfigsDropdown();
+            clearConfigForm();
+            deleteConfigBtn.style.display = 'none';
+            setCleanConfigState();
+        });
+
+        // Config header management functions
+        function addConfigHeaderRow(key = '', value = '') {
+            const row = document.createElement('div');
+            row.className = 'variable-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Header name" class="header-key" value="${escapeHtml(key)}">
+                <input type="text" placeholder="Header value" class="header-value" value="${escapeHtml(value)}">
+                <button class="remove-var-btn" onclick="removeConfigHeaderRow(this)">&times;</button>
+            `;
+            configHeadersContainer.appendChild(row);
+        }
+
+        function removeConfigHeaderRow(btn) {
+            btn.parentElement.remove();
+        }
+
+        function getConfigHeadersFromForm() {
+            const headers = [];
+            const rows = configHeadersContainer.querySelectorAll('.variable-row');
+            rows.forEach(row => {
+                const key = row.querySelector('.header-key').value.trim();
+                const value = row.querySelector('.header-value').value.trim();
+                if (key) {
+                    headers.push({ key, value });
+                }
+            });
+            return headers;
+        }
+
+        function populateConfigHeaders(headers) {
+            configHeadersContainer.innerHTML = '';
+            if (headers && headers.length > 0) {
+                headers.forEach(h => addConfigHeaderRow(h.key, h.value));
+            } else {
+                addConfigHeaderRow(); // Add one empty row
+            }
+        }
+
+        // Config variable management functions
+        function addConfigVariableRow(name = '', value = '') {
+            const row = document.createElement('div');
+            row.className = 'variable-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Variable name (e.g., userId)" class="var-name" value="${escapeHtml(name)}">
+                <input type="text" placeholder="Value (e.g., 123)" class="var-value" value="${escapeHtml(value)}">
+                <button class="remove-var-btn" onclick="removeConfigVariableRow(this)">&times;</button>
+            `;
+            configVariablesContainer.appendChild(row);
+        }
+
+        function removeConfigVariableRow(btn) {
+            btn.parentElement.remove();
+        }
+
+        function getConfigVariablesFromForm() {
+            const variables = [];
+            const rows = configVariablesContainer.querySelectorAll('.variable-row');
+            rows.forEach(row => {
+                const name = row.querySelector('.var-name').value.trim();
+                const value = row.querySelector('.var-value').value.trim();
+                if (name) {
+                    variables.push({ name, value });
+                }
+            });
+            return variables;
+        }
+
+        function populateConfigVariables(variables) {
+            configVariablesContainer.innerHTML = '';
+            if (variables && variables.length > 0) {
+                variables.forEach(v => addConfigVariableRow(v.name, v.value));
+            } else {
+                addConfigVariableRow(); // Add one empty row
+            }
+        }
+
+        // Initialize config form
+        populateConfigHeaders([]);
+        populateConfigVariables([]);
+        setupConfigDirtyTracking();
+        setCleanConfigState();
+
+        // Header management
+        function addHeader() {
+            const row = document.createElement('div');
+            row.className = 'header-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Header name" class="header-key">
+                <input type="text" placeholder="Header value" class="header-value">
+                <button class="remove-btn" onclick="removeHeader(this)">X</button>
+            `;
+            headersContainer.appendChild(row);
+        }
+
+        function removeHeader(btn) {
+            const rows = headersContainer.querySelectorAll('.header-row');
+            if (rows.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                const inputs = btn.parentElement.querySelectorAll('input');
+                inputs.forEach(input => input.value = '');
+            }
+        }
+
+        function getHeaders() {
+            const headers = {};
+            const rows = headersContainer.querySelectorAll('.header-row');
+            rows.forEach(row => {
+                const key = row.querySelector('.header-key').value.trim();
+                const value = row.querySelector('.header-value').value.trim();
+                if (key) headers[key] = value;
+            });
+            return headers;
+        }
+
+        // Response tab switching
+        const endpointTabEl = document.getElementById('endpointTab');
+        const debugTabEl = document.getElementById('debugTab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const tabName = tab.dataset.tab;
+                bodyTabContainer.classList.toggle('hidden', tabName !== 'body');
+                headersTab.classList.toggle('hidden', tabName !== 'headers');
+                endpointTabEl.classList.toggle('hidden', tabName !== 'endpoint');
+                debugTabEl.classList.toggle('hidden', tabName !== 'debug');
+            });
+        });
+
+        // Sidebar tab switching
+        const sidebarTabs = document.querySelectorAll('.sidebar-tab');
+        const configTabContent = document.getElementById('configTabContent');
+        const endpointsTabContent = document.getElementById('endpointsTabContent');
+        const historyTabContent = document.getElementById('historyTabContent');
+        const historyContainer = document.getElementById('historyContainer');
+
+        sidebarTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                sidebarTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const tabName = tab.dataset.sidebarTab;
+                configTabContent.classList.toggle('active', tabName === 'config');
+                endpointsTabContent.classList.toggle('active', tabName === 'endpoints');
+                historyTabContent.classList.toggle('active', tabName === 'history');
+            });
+        });
+
+        function switchToEndpointsTab() {
+            sidebarTabs.forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-sidebar-tab="endpoints"]').classList.add('active');
+            configTabContent.classList.remove('active');
+            endpointsTabContent.classList.add('active');
+            historyTabContent.classList.remove('active');
+        }
+
+        function restoreSidebarTab(tabName) {
+            sidebarTabs.forEach(t => t.classList.remove('active'));
+            const targetTab = document.querySelector(`[data-sidebar-tab="${tabName}"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+            configTabContent.classList.toggle('active', tabName === 'config');
+            endpointsTabContent.classList.toggle('active', tabName === 'endpoints');
+            historyTabContent.classList.toggle('active', tabName === 'history');
+        }
+
+        // Initialize history (after historyContainer is defined)
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            if (confirm('Clear all request history?')) {
+                clearHistory();
+            }
+        });
+        renderHistory();
+
+        // Initialize (part 2 - after sidebar tabs are defined)
+        setupAutoSave();
+        restoreState();
+
+        // Server management
+        function getSelectedServer() {
+            return serverSelect.value || '';
+        }
+
+        function updateServerDropdown() {
+            const allServers = [...servers, ...customServers];
+            serverSelect.innerHTML = allServers.map((s, i) => {
+                const isCustom = i >= servers.length;
+                const label = isCustom ? `${s} (custom)` : s;
+                return `<option value="${escapeHtml(s)}">${escapeHtml(label)}</option>`;
+            }).join('');
+        }
+
+        function renderCustomServers() {
+            if (customServers.length === 0) {
+                customServersContainer.innerHTML = '';
+                return;
+            }
+            customServersContainer.innerHTML = customServers.map((url, index) => `
+                <div class="custom-server-item" data-index="${index}">
+                    <span class="server-url" title="${escapeHtml(url)}">${escapeHtml(url)}</span>
+                    <button class="edit-btn" title="Edit" onclick="editCustomServer(${index})">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <button class="delete-btn" title="Delete" onclick="deleteCustomServer(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        window.editCustomServer = function(index) {
+            const item = customServersContainer.querySelector(`[data-index="${index}"]`);
+            const url = customServers[index];
+            const wasSelected = serverSelect.value === url;
+
+            item.innerHTML = `
+                <input type="text" class="server-url-input" value="${escapeHtml(url)}" onkeydown="if(event.key==='Enter')saveCustomServer(${index});if(event.key==='Escape')renderCustomServers();">
+                <button class="save-btn" title="Save" onclick="saveCustomServer(${index})">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="cancel-btn" title="Cancel" onclick="renderCustomServers()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            item.dataset.wasSelected = wasSelected;
+            item.querySelector('input').focus();
+            item.querySelector('input').select();
+        };
+
+        window.saveCustomServer = function(index) {
+            const item = customServersContainer.querySelector(`[data-index="${index}"]`);
+            const input = item.querySelector('input');
+            const newUrl = input.value.trim();
+            const oldUrl = customServers[index];
+            const wasSelected = item.dataset.wasSelected === 'true';
+
+            if (!newUrl) {
+                renderCustomServers();
+                return;
+            }
+
+            if (newUrl !== oldUrl && (customServers.includes(newUrl) || servers.includes(newUrl))) {
+                alert('This server URL already exists');
+                return;
+            }
+
+            customServers[index] = newUrl;
+            updateServerDropdown();
+            renderCustomServers();
+
+            if (wasSelected) {
+                serverSelect.value = newUrl;
+            }
+        };
+
+        window.deleteCustomServer = function(index) {
+            const url = customServers[index];
+            const wasSelected = serverSelect.value === url;
+
+            customServers.splice(index, 1);
+            updateServerDropdown();
+            renderCustomServers();
+
+            if (wasSelected && serverSelect.options.length > 0) {
+                serverSelect.selectedIndex = 0;
+            }
+        };
+
+        addServerBtn.addEventListener('click', () => {
+            const url = customServerInput.value.trim();
+            if (url && !customServers.includes(url) && !servers.includes(url)) {
+                customServers.push(url);
+                updateServerDropdown();
+                renderCustomServers();
+                serverSelect.value = url;
+                customServerInput.value = '';
+            }
+        });
+
+        customServerInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addServerBtn.click();
+        });
+
+        // OpenAPI spec loading
+        loadSpecBtn.addEventListener('click', loadOpenApiSpec);
+        openapiUrl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loadOpenApiSpec();
+        });
+
+        refreshSpecBtn.addEventListener('click', async () => {
+            const specUrl = openapiUrl.value.trim();
+            if (!specUrl) return;
+
+            refreshSpecBtn.disabled = true;
+            refreshSpecBtn.classList.add('spinning');
+
+            try {
+                console.log('[Refresh] Fetching spec from:', specUrl);
+                const response = await fetch('/api/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method: 'GET', url: specUrl })
+                });
+
+                const data = await response.json();
+                console.log('[Refresh] Proxy response status:', data.status);
+                console.log('[Refresh] Body length:', data.body?.length);
+
+                if (data.error) throw new Error(data.error);
+                if (data.status >= 400) throw new Error(`HTTP ${data.status}: ${data.statusMessage}`);
+
+                currentSpec = JSON.parse(data.body);
+                console.log('[Refresh] Parsed spec:', currentSpec.info?.title, '- paths:', Object.keys(currentSpec.paths || {}).length);
+
+                const newServers = extractServers(currentSpec, specUrl);
+                console.log('[Refresh] Extracted servers:', newServers.length);
+
+                // Merge: keep custom servers, update spec servers
+                servers = newServers;
+                updateServerDropdown();
+                renderEndpoints(currentSpec);
+
+                // Re-apply filter to new endpoints (or clear it)
+                if (endpointsFilter.value) {
+                    filterEndpoints();
+                }
+                console.log('[Refresh] Complete');
+
+            } catch (err) {
+                console.error('[Refresh] Error:', err);
+                alert('Failed to refresh spec: ' + err.message);
+            } finally {
+                refreshSpecBtn.disabled = false;
+                refreshSpecBtn.classList.remove('spinning');
+            }
+        });
+
+        async function loadOpenApiSpec() {
+            const specUrl = openapiUrl.value.trim();
+            if (!specUrl) return;
+
+            loadSpecBtn.disabled = true;
+            loadSpecBtn.textContent = '...';
+            endpointsContainer.innerHTML = '<div class="loading">Loading spec...</div>';
+
+            try {
+                const response = await fetch('/api/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method: 'GET', url: specUrl })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                currentSpec = JSON.parse(data.body);
+                servers = extractServers(currentSpec, specUrl);
+
+                // Show and populate server dropdown
+                serverSection.classList.remove('hidden');
+                updateServerDropdown();
+
+                renderEndpoints(currentSpec);
+
+                // Clear filter for fresh load
+                endpointsFilter.value = '';
+                endpointsFilterWrapper.classList.remove('has-value');
+
+                // Show refresh button
+                refreshSpecBtn.style.display = '';
+
+            } catch (err) {
+                endpointsContainer.innerHTML = `<div class="error" style="margin: 16px;">${escapeHtml(err.message)}</div>`;
+                serverSection.classList.add('hidden');
+                refreshSpecBtn.style.display = 'none';
+            } finally {
+                loadSpecBtn.disabled = false;
+                loadSpecBtn.textContent = 'Load';
+            }
+        }
+
+        function extractServers(spec, specUrl) {
+            const result = [];
+
+            // OpenAPI 3.x
+            if (spec.servers && spec.servers.length > 0) {
+                spec.servers.forEach(server => {
+                    let url = server.url;
+                    // Handle relative URLs
+                    if (url.startsWith('/')) {
+                        const specUrlObj = new URL(specUrl);
+                        url = specUrlObj.origin + url;
+                    }
+                    result.push(url.replace(/\/$/, ''));
+                });
+            }
+            // Swagger 2.x
+            else if (spec.host) {
+                const schemes = spec.schemes || ['https'];
+                const basePath = spec.basePath || '';
+                schemes.forEach(scheme => {
+                    result.push(`${scheme}://${spec.host}${basePath}`.replace(/\/$/, ''));
+                });
+            }
+
+            // Fallback: use spec URL origin
+            if (result.length === 0) {
+                try {
+                    const url = new URL(specUrl);
+                    result.push(url.origin);
+                } catch {}
+            }
+
+            return result;
+        }
+
+        function renderEndpoints(spec) {
+            const paths = spec.paths || {};
+            const endpoints = [];
+
+            // Extract all endpoints
+            for (const [path, methods] of Object.entries(paths)) {
+                for (const [method, details] of Object.entries(methods)) {
+                    if (['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) {
+                        endpoints.push({
+                            method: method.toUpperCase(),
+                            path,
+                            summary: details.summary || '',
+                            description: details.description || '',
+                            tags: details.tags || ['default'],
+                            operationId: details.operationId || '',
+                            parameters: details.parameters || [],
+                            requestBody: details.requestBody || null
+                        });
+                    }
+                }
+            }
+
+            // Group by tags
+            const grouped = {};
+            endpoints.forEach(ep => {
+                const tag = ep.tags[0] || 'default';
+                if (!grouped[tag]) grouped[tag] = [];
+                grouped[tag].push(ep);
+            });
+
+            // Show API info in endpoints tab
+            document.getElementById('apiInfoEndpoints').classList.remove('hidden');
+            document.getElementById('apiTitleEndpoints').textContent = spec.info?.title || 'API';
+            document.getElementById('apiVersionEndpoints').textContent = `v${spec.info?.version || '1.0'}`;
+
+            // Switch to endpoints tab
+            switchToEndpointsTab();
+
+            // Render
+            let html = '';
+            for (const [tag, eps] of Object.entries(grouped)) {
+                html += `<div class="endpoint-group">`;
+                html += `<div class="endpoint-group-header">${escapeHtml(tag)}</div>`;
+                eps.forEach((ep, idx) => {
+                    const dataAttr = `data-method="${ep.method}" data-path="${escapeHtml(ep.path)}" data-idx="${idx}" data-tag="${escapeHtml(tag)}"`;
+                    html += `
+                        <div class="endpoint-item" ${dataAttr}>
+                            <span class="method-badge ${ep.method.toLowerCase()}">${ep.method}</span>
+                            <div style="flex:1; min-width:0;">
+                                <div class="endpoint-path">${escapeHtml(ep.path)}</div>
+                                ${ep.summary ? `<div class="endpoint-summary">${escapeHtml(ep.summary)}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            endpointsContainer.innerHTML = html;
+
+            // Store endpoints for click handling
+            window.endpointData = grouped;
+
+            // Add click handlers
+            endpointsContainer.querySelectorAll('.endpoint-item').forEach(item => {
+                item.addEventListener('click', () => selectEndpoint(item));
+            });
+
+            // Show filter section when endpoints are loaded
+            endpointsFilterSection.style.display = 'block';
+        }
+
+        // Endpoints filter functionality
+        function filterEndpoints() {
+            const filterText = endpointsFilter.value.toLowerCase().trim();
+
+            // Toggle has-value class for clear button visibility
+            endpointsFilterWrapper.classList.toggle('has-value', filterText.length > 0);
+
+            const items = endpointsContainer.querySelectorAll('.endpoint-item');
+            const groups = endpointsContainer.querySelectorAll('.endpoints-group');
+
+            if (!filterText) {
+                // Show all
+                items.forEach(item => item.style.display = '');
+                groups.forEach(group => group.style.display = '');
+                return;
+            }
+
+            // Filter items
+            items.forEach(item => {
+                const method = (item.dataset.method || '').toLowerCase();
+                const path = (item.dataset.path || '').toLowerCase();
+                const summary = item.querySelector('.endpoint-summary')?.textContent.toLowerCase() || '';
+
+                const matches = method.includes(filterText) ||
+                               path.includes(filterText) ||
+                               summary.includes(filterText);
+
+                item.style.display = matches ? '' : 'none';
+            });
+
+            // Hide groups that have no visible items
+            groups.forEach(group => {
+                const visibleItems = group.querySelectorAll('.endpoint-item:not([style*="display: none"])');
+                group.style.display = visibleItems.length > 0 ? '' : 'none';
+            });
+        }
+
+        endpointsFilter.addEventListener('input', filterEndpoints);
+
+        endpointsFilterClear.addEventListener('click', () => {
+            endpointsFilter.value = '';
+            filterEndpoints();
+            endpointsFilter.focus();
+        });
+
+        function replacePathVariables(path) {
+            if (!currentVariables || currentVariables.length === 0) return path;
+
+            const replaceToggle = document.getElementById('replaceVariablesToggle');
+            if (!replaceToggle || !replaceToggle.checked) return path;
+
+            let result = path;
+            currentVariables.forEach(v => {
+                if (v.name && v.value) {
+                    // Replace {variableName} with value
+                    result = result.replace(new RegExp(`\\{${v.name}\\}`, 'g'), v.value);
+                }
+            });
+            return result;
+        }
+
+        function selectEndpoint(item) {
+            // Update active state
+            endpointsContainer.querySelectorAll('.endpoint-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            const method = item.dataset.method;
+            const path = item.dataset.path;
+            const tag = item.dataset.tag;
+            const idx = parseInt(item.dataset.idx);
+
+            const endpoint = window.endpointData[tag][idx];
+
+            // Set method
+            methodSelect.value = method;
+            updateBodyVisibility();
+
+            // Set URL using selected server, replacing path variables if toggle is on
+            const baseUrl = getSelectedServer();
+            const processedPath = replacePathVariables(path);
+            urlInput.value = baseUrl + processedPath;
+
+            // Generate sample body for POST/PUT/PATCH
+            if (['POST', 'PUT', 'PATCH'].includes(method) && endpoint.requestBody) {
+                const sampleBody = generateSampleBody(endpoint.requestBody);
+                if (sampleBody) {
+                    requestBodyEditor.set(sampleBody);
+                } else {
+                    requestBodyEditor.setText('');
+                }
+            } else {
+                requestBodyEditor.setText('');
+            }
+
+            // Apply config headers first, then add Content-Type if needed
+            headersContainer.innerHTML = '';
+            const configHeaders = getConfigHeadersFromForm();
+
+            // Add Content-Type for methods with body (if not already in config headers)
+            if (['POST', 'PUT', 'PATCH'].includes(method)) {
+                const hasContentType = configHeaders.some(h => h.key.toLowerCase() === 'content-type');
+                if (!hasContentType) {
+                    addHeaderWithValues('Content-Type', 'application/json');
+                }
+            }
+
+            // Add config headers
+            configHeaders.forEach(h => {
+                if (h.key) {
+                    addHeaderWithValues(h.key, h.value);
+                }
+            });
+
+            // Add one empty row if no headers
+            if (headersContainer.children.length === 0) {
+                addHeader();
+            }
+
+            // Render endpoint details tab
+            renderEndpointDetails(endpoint, method, path);
+        }
+
+        function renderEndpointDetails(endpoint, method, path) {
+            const container = document.getElementById('endpointTab');
+
+            // Get full operation details from spec
+            const pathObj = currentSpec?.paths?.[path];
+            const operation = pathObj?.[method.toLowerCase()] || endpoint;
+
+            // Combine path-level and operation-level parameters
+            const pathParams = pathObj?.parameters || [];
+            const opParams = operation.parameters || [];
+            const allParams = [...pathParams, ...opParams];
+
+            let html = `
+                <div class="endpoint-details-header">
+                    <div class="endpoint-details-title">
+                        <span class="method-badge ${method.toLowerCase()}">${method}</span>
+                        ${escapeHtml(operation.summary || operation.operationId || 'Unnamed Operation')}
+                    </div>
+                    <div class="endpoint-details-path">${escapeHtml(path)}</div>
+                    ${operation.description ? `<div class="endpoint-details-description">${escapeHtml(operation.description)}</div>` : ''}
+                    ${operation.operationId ? `<div style="margin-top: 8px; font-size: 12px; color: var(--muted);">Operation ID: <code>${escapeHtml(operation.operationId)}</code></div>` : ''}
+                </div>
+            `;
+
+            // Parameters section
+            if (allParams.length > 0) {
+                html += `
+                    <div class="endpoint-details-section">
+                        <div class="endpoint-details-section-title">Parameters</div>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${allParams.map(p => renderParameterRow(p)).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // Request body section
+            if (operation.requestBody) {
+                html += `
+                    <div class="endpoint-details-section">
+                        <div class="endpoint-details-section-title">Request Body${operation.requestBody.required ? ' <span class="param-required">*required</span>' : ''}</div>
+                        ${operation.requestBody.description ? `<p style="margin-bottom: 10px; color: var(--text);">${escapeHtml(operation.requestBody.description)}</p>` : ''}
+                        ${renderRequestBodySchema(operation.requestBody)}
+                    </div>
+                `;
+            }
+
+            // Responses section
+            if (operation.responses) {
+                html += `
+                    <div class="endpoint-details-section">
+                        <div class="endpoint-details-section-title">Responses</div>
+                        ${renderResponses(operation.responses)}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderParameterRow(param) {
+            // Resolve $ref if present
+            let p = param;
+            if (param.$ref) {
+                const refPath = param.$ref.replace('#/', '').split('/');
+                let resolved = currentSpec;
+                for (const part of refPath) {
+                    resolved = resolved?.[part];
+                }
+                if (resolved) p = resolved;
+            }
+
+            const type = p.schema?.type || p.type || 'string';
+            const format = p.schema?.format || p.format;
+            const typeDisplay = format ? `${type} (${format})` : type;
+
+            return `
+                <tr>
+                    <td>
+                        <span class="param-name">${escapeHtml(p.name)}</span>
+                        ${p.required ? '<span class="param-required">*</span>' : ''}
+                    </td>
+                    <td><span class="param-in">${escapeHtml(p.in)}</span></td>
+                    <td><span class="param-type">${escapeHtml(typeDisplay)}</span></td>
+                    <td>${escapeHtml(p.description || '-')}</td>
+                </tr>
+            `;
+        }
+
+        function renderRequestBodySchema(requestBody) {
+            if (!requestBody.content) return '<div class="schema-block">No schema defined</div>';
+
+            const contentTypes = Object.keys(requestBody.content);
+            let html = '';
+
+            contentTypes.forEach(contentType => {
+                const content = requestBody.content[contentType];
+                html += `<div style="margin-bottom: 8px; font-size: 12px; color: var(--muted);">Content-Type: <code>${escapeHtml(contentType)}</code></div>`;
+
+                if (content.schema) {
+                    const schemaDisplay = resolveSchemaForDisplay(content.schema);
+                    html += `<div class="schema-block">${escapeHtml(JSON.stringify(schemaDisplay, null, 2))}</div>`;
+                }
+            });
+
+            return html;
+        }
+
+        function renderResponses(responses) {
+            let html = '';
+
+            for (const [code, response] of Object.entries(responses)) {
+                // Resolve $ref if present
+                let resp = response;
+                if (response.$ref) {
+                    const refPath = response.$ref.replace('#/', '').split('/');
+                    let resolved = currentSpec;
+                    for (const part of refPath) {
+                        resolved = resolved?.[part];
+                    }
+                    if (resolved) resp = resolved;
+                }
+
+                const codeClass = getResponseCodeClass(code);
+
+                html += `
+                    <div class="response-item">
+                        <div class="response-item-header">
+                            <span class="response-code ${codeClass}">${escapeHtml(code)}</span>
+                            <span class="response-item-desc">${escapeHtml(resp.description || '')}</span>
+                        </div>
+                `;
+
+                if (resp.content) {
+                    for (const [contentType, content] of Object.entries(resp.content)) {
+                        if (content.schema) {
+                            const schemaDisplay = resolveSchemaForDisplay(content.schema);
+                            html += `
+                                <div style="margin-top: 8px; font-size: 12px; color: var(--muted);">Content-Type: <code>${escapeHtml(contentType)}</code></div>
+                                <div class="schema-block" style="margin-top: 6px; max-height: 200px; overflow-y: auto;">${escapeHtml(JSON.stringify(schemaDisplay, null, 2))}</div>
+                            `;
+                        }
+                    }
+                }
+
+                html += '</div>';
+            }
+
+            return html;
+        }
+
+        function getResponseCodeClass(code) {
+            const num = parseInt(code);
+            if (num >= 200 && num < 300) return 'success';
+            if (num >= 300 && num < 400) return 'redirect';
+            if (num >= 400 && num < 500) return 'client-error';
+            return 'server-error';
+        }
+
+        function resolveSchemaForDisplay(schema, visited = new Set(), depth = 0) {
+            if (!schema || depth > 5) return schema;
+
+            // Handle $ref
+            if (schema.$ref) {
+                if (visited.has(schema.$ref)) {
+                    return { $ref: schema.$ref + ' (circular)' };
+                }
+                visited.add(schema.$ref);
+
+                const refPath = schema.$ref.replace('#/', '').split('/');
+                let resolved = currentSpec;
+                for (const part of refPath) {
+                    resolved = resolved?.[part];
+                }
+                if (resolved) {
+                    return resolveSchemaForDisplay(resolved, visited, depth + 1);
+                }
+                return schema;
+            }
+
+            // Handle allOf
+            if (schema.allOf) {
+                let merged = { type: 'object', properties: {} };
+                schema.allOf.forEach(s => {
+                    const resolved = resolveSchemaForDisplay(s, visited, depth + 1);
+                    if (resolved.properties) {
+                        merged.properties = { ...merged.properties, ...resolved.properties };
+                    }
+                });
+                return merged;
+            }
+
+            // Handle object
+            if (schema.type === 'object' && schema.properties) {
+                const result = { type: 'object', properties: {} };
+                for (const [key, prop] of Object.entries(schema.properties)) {
+                    result.properties[key] = resolveSchemaForDisplay(prop, visited, depth + 1);
+                }
+                if (schema.required) result.required = schema.required;
+                return result;
+            }
+
+            // Handle array
+            if (schema.type === 'array' && schema.items) {
+                return {
+                    type: 'array',
+                    items: resolveSchemaForDisplay(schema.items, visited, depth + 1)
+                };
+            }
+
+            // Return simple types as-is
+            const result = { type: schema.type };
+            if (schema.format) result.format = schema.format;
+            if (schema.enum) result.enum = schema.enum;
+            if (schema.description) result.description = schema.description;
+            return result;
+        }
+
+        function addHeaderWithValues(key, value) {
+            const row = document.createElement('div');
+            row.className = 'header-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Header name" class="header-key" value="${escapeHtml(key)}">
+                <input type="text" placeholder="Header value" class="header-value" value="${escapeHtml(value)}">
+                <button class="remove-btn" onclick="removeHeader(this)">X</button>
+            `;
+            headersContainer.appendChild(row);
+        }
+
+        function generateSampleBody(requestBody) {
+            if (!requestBody || !requestBody.content) return null;
+
+            const content = requestBody.content['application/json'];
+            if (!content || !content.schema) return null;
+
+            return schemaToSample(content.schema);
+        }
+
+        function schemaToSample(schema, visited = new Set()) {
+            if (!schema) return null;
+
+            // Handle $ref
+            if (schema.$ref) {
+                const refPath = schema.$ref.replace('#/', '').split('/');
+                let resolved = currentSpec;
+                for (const part of refPath) {
+                    resolved = resolved?.[part];
+                }
+                if (resolved && !visited.has(schema.$ref)) {
+                    visited.add(schema.$ref);
+                    return schemaToSample(resolved, visited);
+                }
+                return {};
+            }
+
+            // Handle allOf
+            if (schema.allOf) {
+                let merged = {};
+                schema.allOf.forEach(s => {
+                    const sample = schemaToSample(s, visited);
+                    if (sample && typeof sample === 'object') {
+                        merged = { ...merged, ...sample };
+                    }
+                });
+                return merged;
+            }
+
+            // Handle type
+            switch (schema.type) {
+                case 'object':
+                    const obj = {};
+                    if (schema.properties) {
+                        for (const [key, prop] of Object.entries(schema.properties)) {
+                            obj[key] = schemaToSample(prop, visited);
+                        }
+                    }
+                    return obj;
+                case 'array':
+                    return [schemaToSample(schema.items, visited)];
+                case 'string':
+                    if (schema.enum) return schema.enum[0];
+                    if (schema.format === 'date') return '2024-01-01';
+                    if (schema.format === 'date-time') return '2024-01-01T00:00:00Z';
+                    if (schema.format === 'email') return 'user@example.com';
+                    if (schema.format === 'uuid') return '00000000-0000-0000-0000-000000000000';
+                    return schema.example || 'string';
+                case 'integer':
+                case 'number':
+                    return schema.example || 0;
+                case 'boolean':
+                    return schema.example ?? true;
+                default:
+                    return schema.example || null;
+            }
+        }
+
+        // Redirect state
+        let pendingRedirect = null;
+
+        // Send request
+        async function sendRequest(overrideUrl = null, overrideMethod = null) {
+            const method = overrideMethod || methodSelect.value;
+            const url = overrideUrl || urlInput.value.trim();
+
+            if (!url) {
+                responseBodyEditor.setText('Error: Please enter a URL');
+                return;
+            }
+
+            // Save to history before sending
+            const requestHeaders = getHeadersArray();
+            const requestBodyValue = ['POST', 'PUT', 'PATCH'].includes(method) ? requestBodyEditor.getText() : null;
+            addToHistory({
+                method,
+                url,
+                headers: requestHeaders,
+                body: requestBodyValue
+            });
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            responseBodyEditor.setText('Loading...');
+            headersTab.innerHTML = '';
+            statusInfo.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        method,
+                        url,
+                        headers: getHeaders(),
+                        requestBody: requestBodyValue
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    responseBodyEditor.setText(`Error: ${data.error}`);
+                    displayDebugInfo(data.debug, data.error);
+                    return;
+                }
+
+                // Check for redirect response
+                if (data.status >= 300 && data.status < 400 && data.headers.location) {
+                    showRedirectModal(data);
+                    return;
+                }
+
+                displayResponse(data);
+
+            } catch (err) {
+                responseBodyEditor.setText(`Error: Request failed - ${err.message}`);
+                displayDebugInfo(null, err.message);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        function displayResponse(data) {
+            statusInfo.classList.remove('hidden');
+            statusBadge.textContent = `${data.status} ${data.statusMessage}`;
+            statusBadge.className = 'status-badge ' + getStatusClass(data.status);
+            timing.textContent = `${data.timing}ms`;
+
+            let formattedBody = data.body;
+            try {
+                const parsed = JSON.parse(data.body);
+                responseBodyEditor.set(parsed);
+                formattedBody = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                responseBodyEditor.setText(data.body);
+            }
+
+            // Store response data for copy function
+            window.lastResponse = {
+                status: data.status,
+                statusMessage: data.statusMessage,
+                headers: data.headers,
+                body: formattedBody
+            };
+
+            headersTab.innerHTML = Object.entries(data.headers)
+                .map(([k, v]) => `<div><span class="header-name">${escapeHtml(k)}:</span> ${escapeHtml(v)}</div>`)
+                .join('');
+
+            // Display debug info
+            displayDebugInfo(data.debug);
+        }
+
+        function displayDebugInfo(debug, error = null) {
+            const container = document.getElementById('debugTab');
+
+            if (!debug && !error) {
+                container.innerHTML = `
+                    <div class="no-endpoint-selected">
+                        <i class="fas fa-bug"></i>
+                        No debug information available
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            if (error) {
+                html += `
+                    <div class="debug-section">
+                        <div class="debug-section-header" style="background: #fee2e2; color: #991b1b;">
+                            <i class="fas fa-exclamation-circle"></i> Error
+                        </div>
+                        <div class="debug-section-content debug-error">${escapeHtml(error)}</div>
+                    </div>
+                `;
+            }
+
+            if (debug && debug.steps) {
+                debug.steps.forEach((step, idx) => {
+                    const isError = step.details?.success === false || step.details?.error;
+                    html += `
+                        <div class="debug-section">
+                            <div class="debug-section-header" ${isError ? 'style="background: #fee2e2; color: #991b1b;"' : ''}>
+                                ${idx + 1}. ${escapeHtml(step.step)}
+                                <span style="float: right; font-weight: normal; opacity: 0.7;">${step.time}</span>
+                            </div>
+                            <div class="debug-section-content ${isError ? 'debug-error' : ''}">${formatDebugDetails(step.details)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html || `
+                <div class="no-endpoint-selected">
+                    <i class="fas fa-bug"></i>
+                    No debug information available
+                </div>
+            `;
+        }
+
+        function formatDebugDetails(details) {
+            if (!details) return 'No details';
+
+            if (typeof details === 'string') {
+                return escapeHtml(details);
+            }
+
+            return Object.entries(details).map(([key, value]) => {
+                let displayValue;
+                if (typeof value === 'object' && value !== null) {
+                    displayValue = JSON.stringify(value, null, 2);
+                } else {
+                    displayValue = String(value);
+                }
+                return `<div class="debug-row"><span class="debug-label">${escapeHtml(key)}:</span><span class="debug-value">${escapeHtml(displayValue)}</span></div>`;
+            }).join('');
+        }
+
+        function showRedirectModal(data) {
+            const originalUrl = urlInput.value.trim();
+            let locationUrl = data.headers.location;
+
+            // Resolve relative URLs against the original URL
+            try {
+                const resolved = new URL(locationUrl, originalUrl);
+                locationUrl = resolved.href;
+            } catch (e) {
+                // If resolution fails, keep original location value
+            }
+
+            pendingRedirect = {
+                url: locationUrl,
+                originalUrl: originalUrl,
+                status: data.status,
+                statusMessage: data.statusMessage,
+                headers: data.headers
+            };
+
+            // Show the original response info
+            displayResponse(data);
+
+            // Populate modal
+            document.getElementById('redirectStatusCode').textContent = `${data.status} ${data.statusMessage}`;
+            document.getElementById('redirectUrl').value = locationUrl;
+
+            // Check for cross-origin redirect
+            const warningEl = document.getElementById('redirectWarning');
+            const warningText = document.getElementById('redirectWarningText');
+            try {
+                const originalHost = new URL(originalUrl).hostname;
+                const redirectHost = new URL(locationUrl).hostname;
+                if (originalHost !== redirectHost) {
+                    warningText.textContent = `This redirects to a different domain (${redirectHost}). Your headers will be sent to this external site.`;
+                    warningEl.classList.remove('hidden');
+                } else {
+                    warningEl.classList.add('hidden');
+                }
+            } catch (e) {
+                warningEl.classList.add('hidden');
+            }
+
+            document.getElementById('redirectModal').style.display = 'flex';
+        }
+
+        function closeRedirectModal() {
+            document.getElementById('redirectModal').style.display = 'none';
+            pendingRedirect = null;
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+        }
+
+        function followRedirect() {
+            if (!pendingRedirect) return;
+
+            const redirectUrl = pendingRedirect.url;
+            closeRedirectModal();
+
+            // Open redirect URL in new browser tab
+            window.open(redirectUrl, '_blank');
+        }
+
+        // Expose redirect functions globally
+        window.closeRedirectModal = closeRedirectModal;
+        window.followRedirect = followRedirect;
+
+        function getStatusClass(status) {
+            if (status >= 200 && status < 300) return 'status-2xx';
+            if (status >= 300 && status < 400) return 'status-3xx';
+            if (status >= 400 && status < 500) return 'status-4xx';
+            return 'status-5xx';
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        sendBtn.addEventListener('click', () => sendRequest());
+        urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendRequest();
+        });
+
+        // Copy response to clipboard
+        document.getElementById('copyResponseBtn').addEventListener('click', () => {
+            if (!window.lastResponse) return;
+
+            const r = window.lastResponse;
+            const headersText = Object.entries(r.headers)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join('\n');
+
+            const fullResponse = `HTTP ${r.status} ${r.statusMessage}\n\n${headersText}\n\n${r.body}`;
+
+            navigator.clipboard.writeText(fullResponse).then(() => {
+                const btn = document.getElementById('copyResponseBtn');
+                btn.classList.add('copied');
+                setTimeout(() => btn.classList.remove('copied'), 1500);
+            });
+        });
+
+        // Close modals on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeRedirectModal();
+                closeExportModal();
+            }
+        });
+
+        // Close redirect modal on overlay click
+        document.getElementById('redirectModal').addEventListener('click', (e) => {
+            if (e.target.id === 'redirectModal') {
+                closeRedirectModal();
+            }
+        });
+
+        // Expose functions globally for onclick handlers
+        window.removeHeader = removeHeader;
+        window.addHeader = addHeader;
+        window.addConfigHeaderRow = addConfigHeaderRow;
+        window.removeConfigHeaderRow = removeConfigHeaderRow;
+        window.addConfigVariableRow = addConfigVariableRow;
+        window.removeConfigVariableRow = removeConfigVariableRow;
+
+    </script>
+</body>
+</html>
