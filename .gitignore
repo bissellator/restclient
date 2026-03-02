@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.log
 CLAUDE.md
+src-tauri/target/
+package-lock.json
