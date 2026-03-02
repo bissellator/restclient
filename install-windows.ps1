@@ -24,7 +24,6 @@ try {
     Write-Host "Rust is required but not installed." -ForegroundColor Yellow
     Write-Host "Installing Rust via rustup..."
 
-    # Download and run rustup
     $rustupInit = "$env:TEMP\rustup-init.exe"
     Invoke-WebRequest -Uri "https://win.rustup.rs/x86_64" -OutFile $rustupInit
     Start-Process -FilePath $rustupInit -ArgumentList "-y" -Wait
@@ -35,15 +34,21 @@ try {
     Write-Host "Rust installed successfully" -ForegroundColor Green
 }
 
-# Install npm dependencies
-Write-Host ""
-Write-Host "Installing npm dependencies..." -ForegroundColor Cyan
-npm install
+# Check for Tauri CLI
+$tauriCheck = cargo tauri --version 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "Installing Tauri CLI..." -ForegroundColor Cyan
+    cargo install tauri-cli
+}
+Write-Host "Tauri CLI found" -ForegroundColor Green
 
 # Build the app
 Write-Host ""
 Write-Host "Building REST Client (this may take a few minutes on first build)..." -ForegroundColor Cyan
-npm run tauri:build
+Push-Location src-tauri
+cargo tauri build
+Pop-Location
 
 # Find the built installer
 $installerPath = "src-tauri\target\release\bundle\nsis\REST Client_1.0.0_x64-setup.exe"

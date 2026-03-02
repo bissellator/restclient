@@ -23,15 +23,20 @@ if ! command -v rustc &> /dev/null; then
 fi
 echo "Rust found: $(rustc --version)"
 
-# Install npm dependencies
-echo ""
-echo "Installing npm dependencies..."
-npm install
+# Check for Tauri CLI
+if ! command -v cargo-tauri &> /dev/null; then
+    echo ""
+    echo "Installing Tauri CLI..."
+    cargo install tauri-cli
+fi
+echo "Tauri CLI found"
 
 # Build the app
 echo ""
 echo "Building REST Client (this may take a few minutes on first build)..."
-npm run tauri:build
+cd src-tauri
+cargo tauri build
+cd ..
 
 # Find and copy the app
 APP_PATH="src-tauri/target/release/bundle/macos/REST Client.app"

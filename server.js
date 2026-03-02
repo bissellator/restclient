@@ -5,12 +5,7 @@ const path = require('path');
 const { URL } = require('url');
 
 const PORT = 8010;
-let publicPath = path.join(__dirname, 'public');
-
-// Allow setting custom public path for packaged Electron apps
-function setPublicPath(p) {
-    publicPath = p;
-}
+const publicPath = path.join(__dirname, 'public');
 
 const MIME_TYPES = {
     '.html': 'text/html',
@@ -184,4 +179,4 @@ if (require.main === module) {
     startServer();
 }
 
-module.exports = { startServer, setPublicPath };
+module.exports = { startServer };

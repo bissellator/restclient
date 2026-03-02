@@ -4,14 +4,8 @@
   "description": "A simple REST client desktop application",
   "main": "server.js",
   "scripts": {
-    "web": "node server.js",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "web": "node server.js"
   },
   "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "@tauri-apps/cli": "^1"
-  }
+  "license": "MIT"
 }
