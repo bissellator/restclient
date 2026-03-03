@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>REST Client</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.0/jsoneditor.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.0/jsoneditor.min.js"></script>
@@ -2727,6 +2728,43 @@
             setCleanConfigState();
         });
 
+        // Auto-save spec as new config and switch to it
+        function autoSaveNewConfig() {
+            const name = currentSpec?.info?.title || 'Untitled API';
+
+            // Clear form fields for new config
+            customServers = [];
+            currentVariables = [];
+            populateConfigHeaders([]);
+            populateConfigVariables([]);
+            renderCustomServers();
+            updateVariablesToggleVisibility();
+
+            // Clear main request headers too
+            headersContainer.innerHTML = '';
+            addHeader();
+
+            const configs = getSavedConfigs();
+            const newConfig = {
+                id: Date.now().toString(),
+                name,
+                openapiUrl: openapiUrl.value.trim(),
+                spec: currentSpec,
+                customServers: [],
+                selectedServer: serverSelect.value || '',
+                headers: [],
+                variables: []
+            };
+
+            configs.push(newConfig);
+            saveConfigs(configs);
+            loadSavedConfigsDropdown();
+            savedConfigsSelect.value = newConfig.id;
+            configNameInput.value = name;
+            deleteConfigBtn.style.display = '';
+            setCleanConfigState();
+        }
+
         // Cancel config button - revert to clean state
         cancelConfigBtn.addEventListener('click', () => {
             if (!cleanConfigState) return;
@@ -3144,11 +3182,6 @@
                 currentSpec = spec;
                 servers = extractServers(spec, '');
 
-                // Auto-fill config name from spec title
-                if (spec.info?.title && !configNameInput.value.trim()) {
-                    configNameInput.value = spec.info.title;
-                }
-
                 // Clear URL input since we loaded from file
                 openapiUrl.value = '';
                 refreshSpecBtn.style.display = 'none';
@@ -3160,6 +3193,9 @@
 
                 endpointsFilter.value = '';
                 endpointsFilterWrapper.classList.remove('has-value');
+
+                // Auto-save as new config
+                autoSaveNewConfig();
 
             } catch (err) {
                 endpointsContainer.innerHTML = `<div class="error" style="margin: 16px;">${escapeHtml(err.message)}</div>`;
@@ -3233,11 +3269,6 @@
                 currentSpec = spec;
                 servers = extractServers(spec, '');
 
-                // Auto-fill config name from spec title
-                if (spec.info?.title && !configNameInput.value.trim()) {
-                    configNameInput.value = spec.info.title;
-                }
-
                 openapiUrl.value = '';
                 uploadedFileName.textContent = 'Pasted spec';
                 refreshSpecBtn.style.display = 'none';
@@ -3251,6 +3282,9 @@
                 endpointsFilterWrapper.classList.remove('has-value');
 
                 closePasteSpecModal();
+
+                // Auto-save as new config
+                autoSaveNewConfig();
 
             } catch (err) {
                 alert('Error loading spec: ' + err.message);
@@ -3355,11 +3389,6 @@
                 currentSpec = JSON.parse(data.body);
                 servers = extractServers(currentSpec, specUrl);
 
-                // Auto-fill config name from spec title
-                if (currentSpec.info?.title && !configNameInput.value.trim()) {
-                    configNameInput.value = currentSpec.info.title;
-                }
-
                 // Show and populate server dropdown
                 serverSection.classList.remove('hidden');
                 updateServerDropdown();
@@ -3373,6 +3402,9 @@
 
                 // Show refresh button
                 refreshSpecBtn.style.display = '';
+
+                // Auto-save as new config
+                autoSaveNewConfig();
 
             } catch (err) {
                 endpointsContainer.innerHTML = `<div class="error" style="margin: 16px;">${escapeHtml(err.message)}</div>`;

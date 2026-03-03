@@ -18,7 +18,8 @@ const MIME_TYPES = {
 };
 
 function serveStatic(req, res) {
-    let filePath = req.url === '/' ? '/index.html' : req.url;
+    const urlPath = new URL(req.url, `http://${req.headers.host}`).pathname;
+    let filePath = urlPath === '/' ? '/index.html' : urlPath;
     filePath = path.join(publicPath, filePath);
 
     const ext = path.extname(filePath);
