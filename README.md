@@ -82,6 +82,15 @@ git push origin v1.0.0
 
 This builds `.dmg` and `.msi`/`.exe` installers and publishes them to GitHub Releases.
 
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b my-feature`)
+3. Make your changes
+4. Submit a PR
+
+All contributions welcome - bug fixes, features, documentation.
+
 ## License
 
 MIT
