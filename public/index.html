@@ -1704,13 +1704,13 @@
                 <div class="config-form-section">
                     <div class="form-group">
                         <label for="configNameInput">Config Name</label>
-                        <input type="text" id="configNameInput" placeholder="e.g., Production API, Local Dev">
+                        <input type="text" id="configNameInput" placeholder="e.g., Production API, Local Dev" spellcheck="false" autocapitalize="off" autocorrect="off">
                     </div>
 
                     <div class="form-group">
                         <label for="openapiUrl">OpenAPI Spec</label>
                         <div class="openapi-input-group">
-                            <input type="text" class="openapi-input" id="openapiUrl" placeholder="https://api.example.com/openapi.json">
+                            <input type="text" class="openapi-input" id="openapiUrl" placeholder="https://api.example.com/openapi.json" spellcheck="false" autocapitalize="off" autocorrect="off">
                             <button class="load-btn" id="loadSpecBtn">Load</button>
                             <button class="refresh-btn" id="refreshSpecBtn" title="Refresh spec from server" style="display: none;">
                                 <i class="fas fa-sync-alt"></i>
@@ -1735,7 +1735,7 @@
                         <label>Server</label>
                         <select class="server-select" id="serverSelect"></select>
                         <div class="custom-server-group" style="margin-top: 8px;">
-                            <input type="text" class="custom-server-input" id="customServerInput" placeholder="Add custom server URL...">
+                            <input type="text" class="custom-server-input" id="customServerInput" placeholder="Add custom server URL..." spellcheck="false" autocapitalize="off" autocorrect="off">
                             <button class="add-server-btn" id="addServerBtn">+ Add</button>
                         </div>
                         <div id="customServersContainer" style="margin-top: 8px;"></div>
@@ -1777,7 +1777,7 @@
                 <div class="endpoints-filter" id="endpointsFilterSection" style="display: none;">
                     <div class="endpoints-filter-wrapper" id="endpointsFilterWrapper">
                         <i class="fas fa-search"></i>
-                        <input type="text" class="endpoints-filter-input" id="endpointsFilter" placeholder="Filter endpoints...">
+                        <input type="text" class="endpoints-filter-input" id="endpointsFilter" placeholder="Filter endpoints..." spellcheck="false" autocapitalize="off" autocorrect="off">
                         <button class="endpoints-filter-clear" id="endpointsFilterClear" title="Clear filter">
                             <i class="fas fa-times"></i>
                         </button>
@@ -1825,7 +1825,7 @@
                         <option value="DELETE">DELETE</option>
                         <option value="PATCH">PATCH</option>
                     </select>
-                    <input type="text" class="url-input" id="url" placeholder="Enter URL...">
+                    <input type="text" class="url-input" id="url" placeholder="Enter URL..." spellcheck="false" autocapitalize="off" autocorrect="off">
                     <button class="send-btn" id="sendBtn">Send</button>
                 </div>
 
@@ -1834,8 +1834,8 @@
                         <div class="section-title">Headers</div>
                         <div id="headersContainer">
                             <div class="header-row">
-                                <input type="text" placeholder="Header name" class="header-key">
-                                <input type="text" placeholder="Header value" class="header-value">
+                                <input type="text" placeholder="Header name" class="header-key" spellcheck="false" autocapitalize="off" autocorrect="off">
+                                <input type="text" placeholder="Header value" class="header-value" spellcheck="false" autocapitalize="off" autocorrect="off">
                                 <button class="remove-btn" onclick="removeHeader(this)">X</button>
                             </div>
                         </div>
@@ -2768,6 +2768,7 @@
             // Create new config (either no config selected, or user chose Cancel)
             clearConfigForm();
             currentSpec = spec;
+            if (spec) showEditButton();
             headersContainer.innerHTML = '';
             addHeader();
 
@@ -2848,8 +2849,8 @@
             const row = document.createElement('div');
             row.className = 'variable-row';
             row.innerHTML = `
-                <input type="text" placeholder="Header name" class="header-key" value="${escapeHtml(key)}">
-                <input type="text" placeholder="Header value" class="header-value" value="${escapeHtml(value)}">
+                <input type="text" placeholder="Header name" class="header-key" value="${escapeHtml(key)}" spellcheck="false" autocapitalize="off" autocorrect="off">
+                <input type="text" placeholder="Header value" class="header-value" value="${escapeHtml(value)}" spellcheck="false" autocapitalize="off" autocorrect="off">
                 <button class="remove-var-btn" onclick="removeConfigHeaderRow(this)">&times;</button>
             `;
             configHeadersContainer.appendChild(row);
@@ -2886,8 +2887,8 @@
             const row = document.createElement('div');
             row.className = 'variable-row';
             row.innerHTML = `
-                <input type="text" placeholder="Variable name (e.g., userId)" class="var-name" value="${escapeHtml(name)}">
-                <input type="text" placeholder="Value (e.g., 123)" class="var-value" value="${escapeHtml(value)}">
+                <input type="text" placeholder="Variable name (e.g., userId)" class="var-name" value="${escapeHtml(name)}" spellcheck="false" autocapitalize="off" autocorrect="off">
+                <input type="text" placeholder="Value (e.g., 123)" class="var-value" value="${escapeHtml(value)}" spellcheck="false" autocapitalize="off" autocorrect="off">
                 <button class="remove-var-btn" onclick="removeConfigVariableRow(this)">&times;</button>
             `;
             configVariablesContainer.appendChild(row);
@@ -2930,8 +2931,8 @@
             const row = document.createElement('div');
             row.className = 'header-row';
             row.innerHTML = `
-                <input type="text" placeholder="Header name" class="header-key">
-                <input type="text" placeholder="Header value" class="header-value">
+                <input type="text" placeholder="Header name" class="header-key" spellcheck="false" autocapitalize="off" autocorrect="off">
+                <input type="text" placeholder="Header value" class="header-value" spellcheck="false" autocapitalize="off" autocorrect="off">
                 <button class="remove-btn" onclick="removeHeader(this)">X</button>
             `;
             headersContainer.appendChild(row);
@@ -3361,7 +3362,7 @@
                 }
 
                 currentSpec = spec;
-                servers = extractServers(spec, '');
+                servers = extractServers(spec, openapiUrl.value.trim() || '');
 
                 // Update config name if changed
                 if (spec.info?.title) {
@@ -3370,6 +3371,22 @@
 
                 updateServerDropdown();
                 renderEndpoints(currentSpec);
+
+                // Save to localStorage if a config is selected
+                const configId = savedConfigsSelect.value;
+                if (configId) {
+                    const configs = getSavedConfigs();
+                    const config = configs.find(c => c.id === configId);
+                    if (config) {
+                        config.spec = spec;
+                        if (spec.info?.title) {
+                            config.name = spec.info.title;
+                        }
+                        saveConfigs(configs);
+                        loadSavedConfigsDropdown();
+                        savedConfigsSelect.value = configId;
+                    }
+                }
 
                 closeEditSpecModal();
 
@@ -3912,8 +3929,8 @@
             const row = document.createElement('div');
             row.className = 'header-row';
             row.innerHTML = `
-                <input type="text" placeholder="Header name" class="header-key" value="${escapeHtml(key)}">
-                <input type="text" placeholder="Header value" class="header-value" value="${escapeHtml(value)}">
+                <input type="text" placeholder="Header name" class="header-key" value="${escapeHtml(key)}" spellcheck="false" autocapitalize="off" autocorrect="off">
+                <input type="text" placeholder="Header value" class="header-value" value="${escapeHtml(value)}" spellcheck="false" autocapitalize="off" autocorrect="off">
                 <button class="remove-btn" onclick="removeHeader(this)">X</button>
             `;
             headersContainer.appendChild(row);
