@@ -298,6 +298,14 @@
             overflow-y: auto;
         }
 
+        .help-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
         .history-item {
             padding: 10px 16px;
             cursor: pointer;
@@ -1682,6 +1690,9 @@
                 <button class="sidebar-tab" data-sidebar-tab="history">
                     <i class="fas fa-history"></i> History
                 </button>
+                <button class="sidebar-tab" data-sidebar-tab="help">
+                    <i class="fas fa-question-circle"></i> Help
+                </button>
             </div>
 
             <!-- Config Tab Content -->
@@ -1809,6 +1820,63 @@
                     <div class="endpoints-empty">
                         <i class="fas fa-history"></i>
                         No requests yet
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Tab Content -->
+            <div class="sidebar-tab-content" id="helpTabContent">
+                <div class="help-content">
+                    <h3 style="margin: 0 0 12px 0; font-size: 16px;">Sometimes you just need to make a REST call...</h3>
+
+                    <p style="margin: 0 0 12px 0; color: var(--muted);">
+                        While the way we build and test online tools is evolving at impossible speeds using AI to discover data sources and build our apps, sometimes you still need to lift the hood and just make an API call.
+                    </p>
+
+                    <p style="margin: 0 0 12px 0; color: var(--muted);">
+                        I've been frustrated with the tools out there. Some used to be really good and just added so many features they became unwieldy. Some became corporate fronts that started breaking security rules.
+                    </p>
+
+                    <p style="margin: 0 0 16px 0; color: var(--muted);">
+                        So, in this age of AI, I had Claude build a REST client. This is pretty much as bare bones as you can go with a few bells and whistles.
+                    </p>
+
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;"><i class="fas fa-star" style="color: var(--accent);"></i> Features</h4>
+                    <ul style="margin: 0 0 16px 0; padding-left: 20px; color: var(--muted);">
+                        <li>GET, POST, PUT, PATCH, DELETE requests</li>
+                        <li>Import OpenAPI specs from URL, file upload, or paste</li>
+                        <li>Edit specs directly in the app</li>
+                        <li>Save multiple API configurations</li>
+                        <li>Store headers and path variables per config</li>
+                        <li>Request history with replay</li>
+                        <li>Export/import configs for sharing</li>
+                        <li>Works offline (web version)</li>
+                    </ul>
+
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;"><i class="fas fa-rocket" style="color: var(--accent);"></i> Quick Start</h4>
+                    <ol style="margin: 0 0 16px 0; padding-left: 20px; color: var(--muted);">
+                        <li>Enter a URL or load an OpenAPI spec</li>
+                        <li>Select an endpoint from the list</li>
+                        <li>Add any required headers or variables</li>
+                        <li>Click Send</li>
+                    </ol>
+
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;"><i class="fas fa-lightbulb" style="color: var(--accent);"></i> Tips</h4>
+                    <ul style="margin: 0 0 16px 0; padding-left: 20px; color: var(--muted);">
+                        <li>Use <code style="background: var(--bg-light); padding: 2px 4px; border-radius: 3px;">{variableName}</code> in URLs for path parameters</li>
+                        <li>Configs auto-save as you edit</li>
+                        <li>Click any history item to replay it</li>
+                    </ul>
+
+                    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+                        <div style="margin-bottom: 12px;">
+                            <a href="https://www.linkedin.com/in/bissellator/" target="_blank" style="color: var(--accent); text-decoration: none;">
+                                <i class="fab fa-linkedin"></i> Michael Bissell
+                            </a>
+                        </div>
+                        <a href="https://github.com/bissellator/restclient" target="_blank" style="color: var(--accent); text-decoration: none;">
+                            <i class="fab fa-github"></i> View on GitHub
+                        </a>
                     </div>
                 </div>
             </div>
@@ -2979,6 +3047,7 @@
         const configTabContent = document.getElementById('configTabContent');
         const endpointsTabContent = document.getElementById('endpointsTabContent');
         const historyTabContent = document.getElementById('historyTabContent');
+        const helpTabContent = document.getElementById('helpTabContent');
         const historyContainer = document.getElementById('historyContainer');
 
         sidebarTabs.forEach(tab => {
@@ -2989,6 +3058,7 @@
                 configTabContent.classList.toggle('active', tabName === 'config');
                 endpointsTabContent.classList.toggle('active', tabName === 'endpoints');
                 historyTabContent.classList.toggle('active', tabName === 'history');
+                helpTabContent.classList.toggle('active', tabName === 'help');
             });
         });
 
@@ -2998,6 +3068,16 @@
             configTabContent.classList.remove('active');
             endpointsTabContent.classList.add('active');
             historyTabContent.classList.remove('active');
+            helpTabContent.classList.remove('active');
+        }
+
+        function switchToHelpTab() {
+            sidebarTabs.forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-sidebar-tab="help"]').classList.add('active');
+            configTabContent.classList.remove('active');
+            endpointsTabContent.classList.remove('active');
+            historyTabContent.classList.remove('active');
+            helpTabContent.classList.add('active');
         }
 
         function restoreSidebarTab(tabName) {
@@ -3009,6 +3089,7 @@
             configTabContent.classList.toggle('active', tabName === 'config');
             endpointsTabContent.classList.toggle('active', tabName === 'endpoints');
             historyTabContent.classList.toggle('active', tabName === 'history');
+            helpTabContent.classList.toggle('active', tabName === 'help');
         }
 
         // Initialize history (after historyContainer is defined)
@@ -3022,6 +3103,11 @@
         // Initialize (part 2 - after sidebar tabs are defined)
         setupAutoSave();
         restoreState();
+
+        // Show help tab on first run (no saved configs)
+        if (!localStorage.getItem(STORAGE_KEY)) {
+            switchToHelpTab();
+        }
 
         // Server management
         function getSelectedServer() {
