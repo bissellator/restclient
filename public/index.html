@@ -2595,7 +2595,7 @@
 
         function loadSavedConfigsDropdown() {
             const configs = getSavedConfigs();
-            savedConfigsSelect.innerHTML = '<option value="">Select a config...</option>' +
+            savedConfigsSelect.innerHTML = '<option value="">New...</option>' +
                 configs.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
         }
 
@@ -2646,11 +2646,20 @@
 
                 setCleanConfigState();
             } else if (config.openapiUrl) {
-                // Legacy config without stored spec - show refresh button to load
+                // Legacy config without stored spec - clear current and show refresh
+                currentSpec = null;
+                hideEditButton();
+                serverSection.classList.add('hidden');
                 refreshSpecBtn.style.display = '';
                 endpointsContainer.innerHTML = '<div class="endpoints-empty"><i class="fas fa-sync-alt"></i>Click refresh to load spec from URL</div>';
                 setCleanConfigState();
             } else {
+                // No spec and no URL
+                currentSpec = null;
+                hideEditButton();
+                serverSection.classList.add('hidden');
+                refreshSpecBtn.style.display = 'none';
+                endpointsContainer.innerHTML = '<div class="endpoints-empty"><i class="fas fa-plug"></i>Load an OpenAPI spec</div>';
                 setCleanConfigState();
             }
         });
@@ -2728,28 +2737,45 @@
             setCleanConfigState();
         });
 
-        // Auto-save spec as new config and switch to it
+        // Auto-save spec - either overwrite existing config or create new
         function autoSaveNewConfig() {
-            const name = currentSpec?.info?.title || 'Untitled API';
+            const spec = currentSpec;
+            const specName = spec?.info?.title || 'Untitled API';
+            const selectedId = savedConfigsSelect.value;
+            const configs = getSavedConfigs();
 
-            // Clear form fields for new config
-            customServers = [];
-            currentVariables = [];
-            populateConfigHeaders([]);
-            populateConfigVariables([]);
-            renderCustomServers();
-            updateVariablesToggleVisibility();
+            // If a config is selected, ask whether to overwrite or create new
+            if (selectedId) {
+                const existingConfig = configs.find(c => c.id === selectedId);
+                if (existingConfig) {
+                    const choice = confirm(
+                        `Update "${existingConfig.name}" with this spec?\n\n` +
+                        `OK = Update existing config (keeps headers/variables)\n` +
+                        `Cancel = Create new config`
+                    );
 
-            // Clear main request headers too
+                    if (choice) {
+                        // Overwrite: only update spec, keep everything else
+                        existingConfig.spec = spec;
+                        existingConfig.openapiUrl = openapiUrl.value.trim();
+                        saveConfigs(configs);
+                        setCleanConfigState();
+                        return;
+                    }
+                }
+            }
+
+            // Create new config (either no config selected, or user chose Cancel)
+            clearConfigForm();
+            currentSpec = spec;
             headersContainer.innerHTML = '';
             addHeader();
 
-            const configs = getSavedConfigs();
             const newConfig = {
                 id: Date.now().toString(),
-                name,
+                name: specName,
                 openapiUrl: openapiUrl.value.trim(),
-                spec: currentSpec,
+                spec: spec,
                 customServers: [],
                 selectedServer: serverSelect.value || '',
                 headers: [],
@@ -2760,7 +2786,7 @@
             saveConfigs(configs);
             loadSavedConfigsDropdown();
             savedConfigsSelect.value = newConfig.id;
-            configNameInput.value = name;
+            configNameInput.value = specName;
             deleteConfigBtn.style.display = '';
             setCleanConfigState();
         }
@@ -3425,9 +3451,17 @@
                 spec.servers.forEach(server => {
                     let url = server.url;
                     // Handle relative URLs
-                    if (url.startsWith('/')) {
-                        const specUrlObj = new URL(specUrl);
-                        url = specUrlObj.origin + url;
+                    if (url.startsWith('/') && specUrl) {
+                        try {
+                            const specUrlObj = new URL(specUrl);
+                            url = specUrlObj.origin + url;
+                        } catch {
+                            // Invalid specUrl, skip relative URL resolution
+                            return;
+                        }
+                    } else if (url.startsWith('/')) {
+                        // Relative URL but no specUrl to resolve against, skip
+                        return;
                     }
                     result.push(url.replace(/\/$/, ''));
                 });

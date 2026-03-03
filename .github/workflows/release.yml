@@ -38,7 +38,16 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli
 
-      - name: Build Tauri App
+      - name: Build Tauri App (macOS universal)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          cd src-tauri
+          cargo tauri build --target universal-apple-darwin
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+
+      - name: Build Tauri App (Windows)
+        if: matrix.platform == 'windows-latest'
         run: |
           cd src-tauri
           cargo tauri build
@@ -51,8 +60,8 @@ jobs:
         with:
           name: macos-build
           path: |
-            src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/release/bundle/macos/*.app
+            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
 
       - name: Upload Windows artifacts
         if: matrix.platform == 'windows-latest'
