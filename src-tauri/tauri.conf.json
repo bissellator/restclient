@@ -1,38 +1,31 @@
 {
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "REST Client",
+  "version": "1.0.0",
+  "identifier": "com.restclient.app",
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "node server.js",
-    "devPath": "http://localhost:8010",
-    "distDir": "../public"
+    "devUrl": "http://localhost:8010",
+    "frontendDist": "../public"
   },
-  "package": {
-    "productName": "REST Client",
-    "version": "1.0.0"
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "targets": "all",
+    "resources": [
+      "../server.js",
+      "../public/**/*",
+      "../package.json"
+    ]
   },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "open": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "com.restclient.app",
-      "targets": "all",
-      "resources": [
-        "../server.js",
-        "../public/**/*",
-        "../package.json"
-      ]
-    },
+  "app": {
     "security": {
       "csp": null
     },

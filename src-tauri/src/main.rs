@@ -34,9 +34,9 @@ fn main() {
             std::thread::sleep(std::time::Duration::from_millis(500));
             Ok(())
         })
-        .on_window_event(|event| {
-            if let tauri::WindowEvent::Destroyed = event.event() {
-                if let Some(server) = event.window().app_handle().try_state::<ServerProcess>() {
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                if let Some(server) = window.app_handle().try_state::<ServerProcess>() {
                     if let Ok(mut guard) = server.0.lock() {
                         if let Some(ref mut child) = *guard {
                             let _ = child.kill();

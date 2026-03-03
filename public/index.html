@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.0/jsoneditor.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.0/jsoneditor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <style>
         :root {
             --text: #505050;
@@ -1706,13 +1707,26 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="openapiUrl">OpenAPI Spec URL</label>
+                        <label for="openapiUrl">OpenAPI Spec</label>
                         <div class="openapi-input-group">
                             <input type="text" class="openapi-input" id="openapiUrl" placeholder="https://api.example.com/openapi.json">
                             <button class="load-btn" id="loadSpecBtn">Load</button>
                             <button class="refresh-btn" id="refreshSpecBtn" title="Refresh spec from server" style="display: none;">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
+                        </div>
+                        <div class="openapi-file-group" style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="openapiFile" accept=".json,.yaml,.yml" style="display: none;">
+                            <button class="modal-btn" id="uploadSpecBtn" style="padding: 6px 12px; font-size: 12px;">
+                                <i class="fas fa-upload"></i> Upload
+                            </button>
+                            <button class="modal-btn" id="pasteSpecBtn" style="padding: 6px 12px; font-size: 12px;">
+                                <i class="fas fa-paste"></i> Paste
+                            </button>
+                            <button class="modal-btn" id="editSpecBtn" style="padding: 6px 12px; font-size: 12px; display: none;">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <span id="uploadedFileName" style="font-size: 12px; color: var(--muted);"></span>
                         </div>
                     </div>
 
@@ -1903,6 +1917,50 @@
         </div>
     </div>
 
+    <!-- Paste Spec Modal -->
+    <div class="modal-overlay" id="pasteSpecModal" style="display: none;">
+        <div class="modal" style="width: 700px; max-height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2><i class="fas fa-paste" style="color: var(--accent); margin-right: 8px;"></i>Paste OpenAPI Spec</h2>
+                <button class="modal-close" id="closePasteSpecModal">&times;</button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+                <p style="margin-bottom: 12px; font-size: 13px; color: var(--muted);">Paste JSON or YAML - YAML will be auto-converted to JSON</p>
+                <div id="pasteSpecEditorContainer" style="flex: 1; min-height: 400px; border: 1px solid var(--border); border-radius: 6px;"></div>
+                <div id="pasteSpecStatus" style="margin-top: 8px; font-size: 12px; display: none;">
+                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    <span>Converted from YAML to JSON</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="cancelPasteSpec">Cancel</button>
+                <button class="modal-btn primary" id="loadPastedSpec">
+                    <i class="fas fa-check"></i> Load Spec
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Spec Modal -->
+    <div class="modal-overlay" id="editSpecModal" style="display: none;">
+        <div class="modal" style="width: 800px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit" style="color: var(--accent); margin-right: 8px;"></i>Edit OpenAPI Spec</h2>
+                <button class="modal-close" id="closeEditSpecModal">&times;</button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+                <p style="margin-bottom: 12px; font-size: 13px; color: var(--muted);">Edit the spec JSON directly. Changes are saved locally.</p>
+                <div id="editSpecEditorContainer" style="flex: 1; min-height: 450px; border: 1px solid var(--border); border-radius: 6px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="cancelEditSpec">Cancel</button>
+                <button class="modal-btn primary" id="saveEditedSpec">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Modal -->
     <div class="modal-overlay" id="exportModal" style="display: none;">
         <div class="modal" style="width: 500px;">
@@ -1995,6 +2053,20 @@
         const openapiUrl = document.getElementById('openapiUrl');
         const loadSpecBtn = document.getElementById('loadSpecBtn');
         const refreshSpecBtn = document.getElementById('refreshSpecBtn');
+        const openapiFile = document.getElementById('openapiFile');
+        const uploadSpecBtn = document.getElementById('uploadSpecBtn');
+        const uploadedFileName = document.getElementById('uploadedFileName');
+        const pasteSpecBtn = document.getElementById('pasteSpecBtn');
+        const pasteSpecModal = document.getElementById('pasteSpecModal');
+        const closePasteSpecModalBtn = document.getElementById('closePasteSpecModal');
+        const cancelPasteSpecBtn = document.getElementById('cancelPasteSpec');
+        const loadPastedSpecBtn = document.getElementById('loadPastedSpec');
+        const pasteSpecStatus = document.getElementById('pasteSpecStatus');
+        const editSpecBtn = document.getElementById('editSpecBtn');
+        const editSpecModal = document.getElementById('editSpecModal');
+        const closeEditSpecModalBtn = document.getElementById('closeEditSpecModal');
+        const cancelEditSpecBtn = document.getElementById('cancelEditSpec');
+        const saveEditedSpecBtn = document.getElementById('saveEditedSpec');
         const endpointsContainer = document.getElementById('endpointsContainer');
         const endpointsFilter = document.getElementById('endpointsFilter');
         const endpointsFilterSection = document.getElementById('endpointsFilterSection');
@@ -2160,36 +2232,32 @@
                         updateVariablesToggleVisibility();
                         deleteConfigBtn.style.display = '';
 
-                        // Load the OpenAPI spec
-                        if (state.openapiUrl) {
-                            loadOpenApiSpec().then(() => {
-                                if (state.selectedServer) {
-                                    serverSelect.value = state.selectedServer;
-                                }
-                                setCleanConfigState();
-                                // Restore sidebar tab after spec is loaded
-                                if (state.sidebarTab) {
-                                    restoreSidebarTab(state.sidebarTab);
-                                }
-                            });
-                        } else {
-                            setCleanConfigState();
-                            if (state.sidebarTab) {
-                                restoreSidebarTab(state.sidebarTab);
+                        // Load spec from stored config (not from URL)
+                        if (config.spec) {
+                            currentSpec = config.spec;
+                            servers = extractServers(currentSpec, config.openapiUrl || '');
+                            serverSection.classList.remove('hidden');
+                            updateServerDropdown();
+                            renderEndpoints(currentSpec);
+                            showEditButton();
+
+                            if (state.selectedServer) {
+                                serverSelect.value = state.selectedServer;
                             }
+
+                            // Show refresh button if URL exists
+                            refreshSpecBtn.style.display = config.openapiUrl ? '' : 'none';
+                        } else if (state.openapiUrl) {
+                            // Legacy: URL but no stored spec
+                            openapiUrl.value = state.openapiUrl;
+                            refreshSpecBtn.style.display = '';
                         }
-                    }
-                } else if (state.openapiUrl) {
-                    // No config but had a spec URL loaded
-                    loadOpenApiSpec().then(() => {
-                        if (state.selectedServer) {
-                            serverSelect.value = state.selectedServer;
-                        }
-                        // Restore sidebar tab after spec is loaded
+
+                        setCleanConfigState();
                         if (state.sidebarTab) {
                             restoreSidebarTab(state.sidebarTab);
                         }
-                    });
+                    }
                 } else if (state.sidebarTab) {
                     // No spec to load, just restore the tab
                     restoreSidebarTab(state.sidebarTab);
@@ -2559,14 +2627,28 @@
             // Show delete button
             deleteConfigBtn.style.display = '';
 
-            // Load the spec if URL exists
-            if (config.openapiUrl) {
-                loadOpenApiSpec().then(() => {
-                    if (config.selectedServer) {
-                        serverSelect.value = config.selectedServer;
-                    }
-                    setCleanConfigState();
-                });
+            // Load spec from stored config (not from URL)
+            if (config.spec) {
+                currentSpec = config.spec;
+                servers = extractServers(currentSpec, config.openapiUrl || '');
+                serverSection.classList.remove('hidden');
+                updateServerDropdown();
+                renderEndpoints(currentSpec);
+                showEditButton();
+
+                if (config.selectedServer) {
+                    serverSelect.value = config.selectedServer;
+                }
+
+                // Show refresh button if URL exists (for manual refresh)
+                refreshSpecBtn.style.display = config.openapiUrl ? '' : 'none';
+
+                setCleanConfigState();
+            } else if (config.openapiUrl) {
+                // Legacy config without stored spec - show refresh button to load
+                refreshSpecBtn.style.display = '';
+                endpointsContainer.innerHTML = '<div class="endpoints-empty"><i class="fas fa-sync-alt"></i>Click refresh to load spec from URL</div>';
+                setCleanConfigState();
             } else {
                 setCleanConfigState();
             }
@@ -2577,12 +2659,15 @@
             openapiUrl.value = '';
             currentVariables = [];
             customServers = [];
+            currentSpec = null;
             populateConfigHeaders([]);
             populateConfigVariables([]);
             renderCustomServers();
             updateVariablesToggleVisibility();
             serverSection.classList.add('hidden');
             refreshSpecBtn.style.display = 'none';
+            hideEditButton();
+            uploadedFileName.textContent = '';
         }
 
         // Save config button - saves current form to selected config or creates new
@@ -2605,6 +2690,7 @@
                 if (idx !== -1) {
                     configs[idx].name = name;
                     configs[idx].openapiUrl = openapiUrl.value.trim();
+                    configs[idx].spec = currentSpec;
                     configs[idx].customServers = [...customServers];
                     configs[idx].selectedServer = serverSelect.value || '';
                     configs[idx].headers = headers;
@@ -2624,6 +2710,7 @@
                 id: Date.now().toString(),
                 name,
                 openapiUrl: openapiUrl.value.trim(),
+                spec: currentSpec,
                 customServers: [...customServers],
                 selectedServer: serverSelect.value || '',
                 headers,
@@ -2986,6 +3073,11 @@
             const specUrl = openapiUrl.value.trim();
             if (!specUrl) return;
 
+            // Warn about overwriting local changes
+            if (!confirm('Refresh from source URL?\n\nThis will overwrite any local changes you\'ve made to the spec.')) {
+                return;
+            }
+
             refreshSpecBtn.disabled = true;
             refreshSpecBtn.classList.add('spinning');
 
@@ -3030,6 +3122,218 @@
             }
         });
 
+        // File upload handling
+        uploadSpecBtn.addEventListener('click', () => openapiFile.click());
+        openapiFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadedFileName.textContent = file.name;
+            endpointsContainer.innerHTML = '<div class="loading">Loading spec...</div>';
+
+            try {
+                const text = await file.text();
+                let spec;
+
+                if (file.name.endsWith('.yaml') || file.name.endsWith('.yml')) {
+                    spec = jsyaml.load(text);
+                } else {
+                    spec = JSON.parse(text);
+                }
+
+                currentSpec = spec;
+                servers = extractServers(spec, '');
+
+                // Auto-fill config name from spec title
+                if (spec.info?.title && !configNameInput.value.trim()) {
+                    configNameInput.value = spec.info.title;
+                }
+
+                // Clear URL input since we loaded from file
+                openapiUrl.value = '';
+                refreshSpecBtn.style.display = 'none';
+
+                serverSection.classList.remove('hidden');
+                updateServerDropdown();
+                renderEndpoints(currentSpec);
+                showEditButton();
+
+                endpointsFilter.value = '';
+                endpointsFilterWrapper.classList.remove('has-value');
+
+            } catch (err) {
+                endpointsContainer.innerHTML = `<div class="error" style="margin: 16px;">${escapeHtml(err.message)}</div>`;
+                serverSection.classList.add('hidden');
+                uploadedFileName.textContent = '';
+                hideEditButton();
+            }
+
+            // Reset file input so same file can be re-selected
+            openapiFile.value = '';
+        });
+
+        // Paste spec modal handling
+        let pasteSpecEditor = null;
+
+        function openPasteSpecModal() {
+            pasteSpecModal.style.display = 'flex';
+            pasteSpecStatus.style.display = 'none';
+
+            if (!pasteSpecEditor) {
+                pasteSpecEditor = new JSONEditor(document.getElementById('pasteSpecEditorContainer'), {
+                    mode: 'code',
+                    modes: ['code', 'text'],
+                    mainMenuBar: false,
+                    statusBar: false,
+                    onChangeText: handlePasteSpecChange
+                });
+            }
+            pasteSpecEditor.setText('');
+        }
+
+        function closePasteSpecModal() {
+            pasteSpecModal.style.display = 'none';
+        }
+
+        function handlePasteSpecChange(text) {
+            if (!text.trim()) {
+                pasteSpecStatus.style.display = 'none';
+                return;
+            }
+
+            // Try to detect and convert YAML
+            const trimmed = text.trim();
+            const looksLikeYaml = !trimmed.startsWith('{') && !trimmed.startsWith('[') &&
+                                  (trimmed.includes(': ') || trimmed.includes(':\n'));
+
+            if (looksLikeYaml) {
+                try {
+                    const parsed = jsyaml.load(text);
+                    if (parsed && typeof parsed === 'object') {
+                        pasteSpecEditor.set(parsed);
+                        pasteSpecStatus.style.display = 'block';
+                    }
+                } catch (e) {
+                    // Not valid YAML yet, user still typing
+                    pasteSpecStatus.style.display = 'none';
+                }
+            } else {
+                pasteSpecStatus.style.display = 'none';
+            }
+        }
+
+        function loadPastedSpec() {
+            try {
+                const spec = pasteSpecEditor.get();
+
+                if (!spec || !spec.paths) {
+                    throw new Error('Invalid OpenAPI spec: missing "paths" property');
+                }
+
+                currentSpec = spec;
+                servers = extractServers(spec, '');
+
+                // Auto-fill config name from spec title
+                if (spec.info?.title && !configNameInput.value.trim()) {
+                    configNameInput.value = spec.info.title;
+                }
+
+                openapiUrl.value = '';
+                uploadedFileName.textContent = 'Pasted spec';
+                refreshSpecBtn.style.display = 'none';
+
+                serverSection.classList.remove('hidden');
+                updateServerDropdown();
+                renderEndpoints(currentSpec);
+                showEditButton();
+
+                endpointsFilter.value = '';
+                endpointsFilterWrapper.classList.remove('has-value');
+
+                closePasteSpecModal();
+
+            } catch (err) {
+                alert('Error loading spec: ' + err.message);
+            }
+        }
+
+        pasteSpecBtn.addEventListener('click', openPasteSpecModal);
+        closePasteSpecModalBtn.addEventListener('click', closePasteSpecModal);
+        cancelPasteSpecBtn.addEventListener('click', closePasteSpecModal);
+        loadPastedSpecBtn.addEventListener('click', loadPastedSpec);
+        pasteSpecModal.addEventListener('click', (e) => {
+            if (e.target === pasteSpecModal) closePasteSpecModal();
+        });
+
+        // Edit spec modal handling
+        let editSpecEditor = null;
+
+        function openEditSpecModal() {
+            if (!currentSpec) {
+                alert('No spec loaded to edit');
+                return;
+            }
+
+            editSpecModal.style.display = 'flex';
+
+            if (!editSpecEditor) {
+                editSpecEditor = new JSONEditor(document.getElementById('editSpecEditorContainer'), {
+                    mode: 'code',
+                    modes: ['code', 'tree'],
+                    mainMenuBar: true,
+                    statusBar: false,
+                    search: true
+                });
+            }
+            editSpecEditor.set(currentSpec);
+        }
+
+        function closeEditSpecModal() {
+            editSpecModal.style.display = 'none';
+        }
+
+        function saveEditedSpec() {
+            try {
+                const spec = editSpecEditor.get();
+
+                if (!spec || !spec.paths) {
+                    throw new Error('Invalid OpenAPI spec: missing "paths" property');
+                }
+
+                currentSpec = spec;
+                servers = extractServers(spec, '');
+
+                // Update config name if changed
+                if (spec.info?.title) {
+                    configNameInput.value = spec.info.title;
+                }
+
+                updateServerDropdown();
+                renderEndpoints(currentSpec);
+
+                closeEditSpecModal();
+
+            } catch (err) {
+                alert('Error saving spec: ' + err.message);
+            }
+        }
+
+        function showEditButton() {
+            editSpecBtn.style.display = '';
+        }
+
+        function hideEditButton() {
+            editSpecBtn.style.display = 'none';
+        }
+
+        editSpecBtn.addEventListener('click', openEditSpecModal);
+        closeEditSpecModalBtn.addEventListener('click', closeEditSpecModal);
+        cancelEditSpecBtn.addEventListener('click', closeEditSpecModal);
+        saveEditedSpecBtn.addEventListener('click', saveEditedSpec);
+        editSpecModal.addEventListener('click', (e) => {
+            if (e.target === editSpecModal) closeEditSpecModal();
+        });
+
         async function loadOpenApiSpec() {
             const specUrl = openapiUrl.value.trim();
             if (!specUrl) return;
@@ -3051,11 +3355,17 @@
                 currentSpec = JSON.parse(data.body);
                 servers = extractServers(currentSpec, specUrl);
 
+                // Auto-fill config name from spec title
+                if (currentSpec.info?.title && !configNameInput.value.trim()) {
+                    configNameInput.value = currentSpec.info.title;
+                }
+
                 // Show and populate server dropdown
                 serverSection.classList.remove('hidden');
                 updateServerDropdown();
 
                 renderEndpoints(currentSpec);
+                showEditButton();
 
                 // Clear filter for fresh load
                 endpointsFilter.value = '';
@@ -3068,6 +3378,7 @@
                 endpointsContainer.innerHTML = `<div class="error" style="margin: 16px;">${escapeHtml(err.message)}</div>`;
                 serverSection.classList.add('hidden');
                 refreshSpecBtn.style.display = 'none';
+                hideEditButton();
             } finally {
                 loadSpecBtn.disabled = false;
                 loadSpecBtn.textContent = 'Load';
